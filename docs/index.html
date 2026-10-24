@@ -1,0 +1,1070 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Plate">
+<meta name="theme-color" content="#0F1110">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<title>Plate</title>
+<style>
+  :root {
+    --bg: #0F1110; --card: #181B1A; --card2: #202422; --line: #2A2F2D; --text: #EEF1EF; --dim: #8D9692;
+    --accent: #3DDC84; --protein: #5AA9FF; --carbs: #F2B544; --fat: #E9788E; --bad: #FF6B6B; --warn: #F2B544;
+    --r: 16px;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; background: var(--bg); color: var(--text); }
+  body {
+    font: 16px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    padding: env(safe-area-inset-top) 0 calc(84px + env(safe-area-inset-bottom));
+    min-height: 100vh; overscroll-behavior-y: none;
+  }
+  main { max-width: 560px; margin: 0 auto; padding: 12px 16px 24px; }
+  h1 { font-size: 22px; margin: 6px 0 14px; letter-spacing: -.01em; }
+  h2 { font-size: 15px; margin: 22px 0 8px; color: var(--dim); font-weight: 600; text-transform: uppercase; letter-spacing: .06em; }
+  button, input, select, textarea { font: inherit; color: inherit; }
+  button { cursor: pointer; }
+  a { color: var(--accent); }
+  .card { background: var(--card); border-radius: var(--r); padding: 16px; margin-bottom: 12px; }
+  .dim { color: var(--dim); }
+  .small { font-size: 13px; }
+  .row { display: flex; align-items: center; gap: 10px; }
+  .spread { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: 0; border-radius: 12px;
+    padding: 13px 16px; background: var(--card2); font-weight: 600; min-height: 48px; text-decoration: none; color: var(--text); }
+  .btn.primary { background: var(--accent); color: #06210F; }
+  .btn.danger { background: transparent; color: var(--bad); }
+  .btn.ghost { background: transparent; color: var(--dim); }
+  .btn.block { width: 100%; }
+  .btn:disabled { opacity: .5; }
+  input[type=text], input[type=number], input[type=password], input[type=time], textarea, select {
+    width: 100%; background: var(--card2); border: 1px solid var(--line); border-radius: 12px; padding: 12px; outline: none; }
+  input:focus, textarea:focus, select:focus { border-color: var(--accent); }
+  textarea { resize: vertical; min-height: 76px; }
+  label.field { display: block; margin-bottom: 12px; }
+  label.field > span { display: block; font-size: 13px; color: var(--dim); margin-bottom: 6px; }
+
+  /* top date bar */
+  .datebar { display: flex; align-items: center; justify-content: space-between; margin: 4px 0 12px; }
+  .datebar button { background: var(--card); border: 0; width: 44px; height: 44px; border-radius: 12px; font-size: 20px; }
+  .datebar .title { text-align: center; }
+  .datebar .title b { display: block; font-size: 18px; }
+
+  /* calorie ring */
+  .hero { display: flex; align-items: center; gap: 18px; }
+  .ring { position: relative; width: 132px; height: 132px; flex: none; }
+  .ring svg { transform: rotate(-90deg); }
+  .ring .mid { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  .ring .mid b { font-size: 28px; letter-spacing: -.02em; }
+  .ring .mid span { font-size: 12px; color: var(--dim); }
+  .macros { flex: 1; min-width: 0; }
+  .macro { margin-bottom: 10px; }
+  .macro .spread { font-size: 14px; }
+  .macro .spread b { font-weight: 600; }
+  .bar { height: 8px; background: var(--card2); border-radius: 99px; overflow: hidden; margin-top: 4px; }
+  .bar i { display: block; height: 100%; border-radius: 99px; }
+  .macro.big .spread { font-size: 16px; }
+  .macro.big .bar { height: 12px; }
+
+  /* entries */
+  .entry { display: flex; gap: 12px; align-items: center; padding: 10px 0; border-top: 1px solid var(--line); }
+  .entry:first-child { border-top: 0; }
+  .thumb { width: 56px; height: 56px; border-radius: 12px; background: var(--card2) center/cover no-repeat; flex: none;
+    display: flex; align-items: center; justify-content: center; font-size: 22px; }
+  .entry .info { flex: 1; min-width: 0; }
+  .entry .info b { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 600; }
+  .entry .nums { text-align: right; font-size: 14px; }
+  .entry .nums b { display: block; font-size: 16px; }
+
+  /* steps */
+  .steps b { font-size: 24px; }
+
+  /* add screen */
+  .favs { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .fav { background: var(--card2); border: 0; border-radius: 12px; padding: 12px; text-align: left; min-height: 64px; }
+  .fav b { display: block; font-size: 14px; font-weight: 600; }
+  .fav span { font-size: 12px; color: var(--dim); }
+  .photo-pick { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; width: 100%;
+    min-height: 120px; border: 2px dashed var(--line); border-radius: var(--r); background: var(--card); font-weight: 600; }
+  .photo-pick .big { font-size: 34px; }
+  .preview { width: 100%; max-height: 300px; object-fit: cover; border-radius: var(--r); display: block; }
+
+  /* review */
+  .item { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-top: 1px solid var(--line); }
+  .item:first-child { border-top: 0; }
+  .item .info { flex: 1; min-width: 0; }
+  .item .info b { font-weight: 600; }
+  .item .x { background: var(--card2); border: 0; border-radius: 10px; width: 36px; height: 36px; color: var(--dim); font-size: 18px; flex: none; }
+  .seg { display: flex; gap: 6px; flex-wrap: wrap; }
+  .seg button { border: 1px solid var(--line); background: var(--card2); border-radius: 10px; padding: 8px 12px; min-width: 48px; }
+  .seg button.on { background: var(--accent); color: #06210F; border-color: var(--accent); font-weight: 700; }
+  .totals { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  .totals label span { display: block; font-size: 12px; color: var(--dim); margin-bottom: 4px; }
+  .totals input { padding: 10px 8px; text-align: center; }
+  .pill { display: inline-block; font-size: 12px; padding: 3px 9px; border-radius: 99px; background: var(--card2); color: var(--dim); }
+  .pill.high { color: var(--accent); } .pill.low { color: var(--warn); }
+  .spinner { width: 28px; height: 28px; border: 3px solid var(--card2); border-top-color: var(--accent); border-radius: 50%; animation: spin .8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .error { color: var(--bad); }
+  .check { display: flex; align-items: center; gap: 10px; padding: 6px 0; }
+  .check input { width: 22px; height: 22px; accent-color: var(--accent); }
+
+  /* history */
+  .hrow { display: grid; grid-template-columns: 74px 1fr 64px 62px; gap: 10px; align-items: center; padding: 10px 0; border-top: 1px solid var(--line); font-size: 14px; text-decoration: none; color: var(--text); }
+  .hrow:first-of-type { border-top: 0; }
+  .hrow .bar { margin: 0; }
+  .avg { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; text-align: center; }
+  .avg b { display: block; font-size: 20px; }
+  .avg span { font-size: 12px; color: var(--dim); }
+  .ok { color: var(--accent); } .meh { color: var(--warn); } .no { color: var(--bad); }
+
+  /* settings */
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0 10px; }
+  code, .code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12px; background: var(--card2);
+    padding: 2px 5px; border-radius: 6px; word-break: break-all; }
+  ol.steps-how { padding-left: 20px; margin: 8px 0; }
+  ol.steps-how li { margin-bottom: 8px; }
+
+  /* tab bar */
+  .tabbar { position: fixed; left: 0; right: 0; bottom: 0; background: rgba(15,17,16,.94); backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px); border-top: 1px solid var(--line); display: flex; justify-content: space-around;
+    align-items: center; padding: 6px 8px calc(6px + env(safe-area-inset-bottom)); z-index: 5; }
+  .tabbar a { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px; color: var(--dim); text-decoration: none;
+    font-size: 11px; padding: 6px 0; }
+  .tabbar a.on { color: var(--text); }
+  .tabbar a svg { width: 24px; height: 24px; }
+  .tabbar a.plus { flex: none; width: 58px; height: 58px; border-radius: 50%; background: var(--accent); color: #06210F;
+    justify-content: center; margin: -22px 8px 0; box-shadow: 0 6px 20px rgba(61,220,132,.3); }
+  .tabbar a.plus svg { width: 30px; height: 30px; }
+
+  #toast { position: fixed; left: 50%; bottom: calc(96px + env(safe-area-inset-bottom)); transform: translateX(-50%) translateY(20px);
+    background: #2B302E; color: var(--text); padding: 12px 16px; border-radius: 12px; display: flex; gap: 14px; align-items: center;
+    opacity: 0; pointer-events: none; transition: .2s; z-index: 9; max-width: calc(100% - 32px); box-shadow: 0 8px 30px rgba(0,0,0,.4); }
+  #toast.show { opacity: 1; transform: translateX(-50%); pointer-events: auto; }
+  #toast button { background: none; border: 0; color: var(--accent); font-weight: 700; padding: 0; }
+</style>
+</head>
+<body>
+<main id="view"></main>
+<nav class="tabbar" id="tabs">
+  <a href="#/" data-tab="today"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4"/></svg>Today</a>
+  <a href="#/history" data-tab="history"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 20V10M12 20V4M19 20v-7"/></svg>History</a>
+  <a href="#/add" class="plus" data-tab="add" aria-label="Log food"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></a>
+  <a href="#/favorites" data-tab="favorites"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/></svg>Saved</a>
+  <a href="#/settings" data-tab="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg>Settings</a>
+</nav>
+<div id="toast"><span id="toastText"></span><button id="toastBtn" hidden></button></div>
+<input type="file" id="photoIn" accept="image/*" hidden>
+
+<script type="module">
+// ---------- constants ----------
+const SDK_URL = "https://cdn.jsdelivr.net/npm/@anthropic-ai/sdk@0.128.0/+esm";
+const MODEL = "claude-opus-5-5";
+const PRICE_IN = 4 / 1e6, PRICE_OUT = 20 / 1e6;   // Claude Opus 5.5, dollars per token
+const DEFAULT_REPO = "PerryIndustries/plate-data";
+const DEFAULTS = { cal: 2050, protein: 160, carbs: 215, fat: 60, stepsGoal: 9000, dayStart: 4, goalsU: 0,
+  apiKey: "", token: "", repo: DEFAULT_REPO };
+const GOAL_KEYS = ["cal", "protein", "carbs", "fat", "stepsGoal", "dayStart"];
+// Starting favorites so the first week needs no typing. Restaurant numbers are estimates; edit them freely.
+const STARTERS = [
+  { title: "Carne asada bowl", sub: "8 oz steak, rice, beans, salsa", cal: 830, p: 68, c: 70, f: 29, fiber: 9 },
+  { title: "Protein yogurt bowl", sub: "Greek yogurt, protein powder, granola, milk", cal: 470, p: 45, c: 50, f: 9, fiber: 2 },
+  { title: "3 street tacos, double asada", sub: "corn tortillas, onion, cilantro, salsa", cal: 680, p: 52, c: 58, f: 24, fiber: 7 },
+  { title: "Chipotle bowl, double chicken", sub: "white rice, black beans, fajita veg, salsa", cal: 745, p: 77, c: 70, f: 20, fiber: 12 },
+  { title: "Protein shake", sub: "1 scoop with water", cal: 130, p: 25, c: 4, f: 2, fiber: 0 },
+];
+
+const SYSTEM = `You estimate calories and macros for one meal in a personal food log. The person is a 22-year-old man, 5'8", about 160 lb, cutting fat while keeping protein high, so protein and calories matter most.
+
+Work out what was eaten and how much from the photo, the description, or both. Amounts and details the person states always win over what you see. Use a nutrition label whenever one is visible. Judge portions from the plate, hands, utensils and packaging; for restaurant food assume that restaurant's normal portion. Count cooking oil, butter, sauces, dressings and drinks that are visible or mentioned, because those are where food logs usually undercount.
+
+Split the meal into its main components, one item per distinct food. For each item give a short name, the portion you assumed in plain words ("8 oz cooked", "1 cup", "3 corn tortillas"), and calories plus protein, carbs, fat and fiber in grams for that portion.
+
+title: a short name for the meal, under 40 characters.
+confidence: "high" when amounts are known (label, weighed, stated), "medium" when portions are judged from a clear photo, "low" when guessing.
+note: one short sentence naming the biggest uncertainty (for example the oil, or how much rice), or an empty string.`;
+
+const NUM = { type: "number" };
+const SCHEMA = {
+  type: "object", additionalProperties: false, required: ["title", "items", "confidence", "note"],
+  properties: {
+    title: { type: "string" },
+    items: { type: "array", items: { type: "object", additionalProperties: false,
+      required: ["name", "portion", "calories", "protein", "carbs", "fat", "fiber"],
+      properties: { name: { type: "string" }, portion: { type: "string" }, calories: NUM, protein: NUM, carbs: NUM, fat: NUM, fiber: NUM } } },
+    confidence: { type: "string", enum: ["high", "medium", "low"] },
+    note: { type: "string" },
+  },
+};
+
+// ---------- storage (IndexedDB, with an in-memory fallback so the app still opens in private mode) ----------
+let db = null;
+const mem = new Map();
+try {
+  db = await new Promise((res, rej) => {
+    const r = indexedDB.open("plate", 1);
+    r.onupgradeneeded = () => r.result.createObjectStore("kv");
+    r.onsuccess = () => res(r.result);
+    r.onerror = () => rej(r.error);
+  });
+} catch { db = null; }
+function kv(mode, op) {
+  return new Promise((res, rej) => {
+    const tx = db.transaction("kv", mode);
+    const req = op(tx.objectStore("kv"));
+    tx.oncomplete = () => res(req ? req.result : undefined);
+    tx.onerror = tx.onabort = () => rej(tx.error);
+  });
+}
+const get = (k) => db ? kv("readonly", (s) => s.get(k)) : Promise.resolve(mem.get(k));
+const put = (k, v) => db ? kv("readwrite", (s) => s.put(v, k)) : Promise.resolve(mem.set(k, v));
+const allKeys = () => db ? kv("readonly", (s) => s.getAllKeys()) : Promise.resolve([...mem.keys()]);
+
+// ---------- state ----------
+const S = { settings: {}, favs: [], days: {}, steps: {}, meta: {}, draft: null, photos: new Map() };
+
+async function load() {
+  S.settings = Object.assign({}, DEFAULTS, (await get("settings")) || {});
+  S.favs = (await get("favs")) || [];
+  S.steps = (await get("steps")) || {};
+  S.meta = Object.assign({ dirty: [], photoQueue: [], usage: {}, seeded: 0, restored: 0 }, (await get("meta")) || {});
+  for (const k of await allKeys()) if (String(k).startsWith("day:")) S.days[k.slice(4)] = await get(k);
+  S.draft = (await get("draft")) || null;
+  if (!S.meta.seeded) {
+    const now = Date.now();
+    S.favs = STARTERS.map((s, i) => ({ id: "starter" + i, title: s.title, sub: s.sub, items: [],
+      cal: s.cal, p: s.p, c: s.c, f: s.f, fiber: s.fiber, u: now }));
+    S.meta.seeded = 1;
+    await put("favs", S.favs);
+    await saveMeta();
+  }
+}
+const saveMeta = () => put("meta", S.meta);
+const saveSettings = () => put("settings", S.settings);
+let draftTimer = 0;
+function saveDraft() { clearTimeout(draftTimer); draftTimer = setTimeout(() => put("draft", S.draft), 300); }
+
+// ---------- helpers ----------
+const $ = (id) => document.getElementById(id);
+const view = $("view");
+const h = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const r0 = (n) => Math.round(+n || 0);
+const fmt = (n) => r0(n).toLocaleString("en-US");
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+const pad = (n) => String(n).padStart(2, "0");
+const ymd = (d) => d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate());
+// The food day rolls over at dayStart (4 AM by default), so a 1 AM snack counts toward the day you were still up for.
+function today() { const d = new Date(Date.now() - (+S.settings.dayStart || 0) * 3600e3); return ymd(d); }
+function shiftDay(date, n) { const d = new Date(date + "T12:00:00"); d.setDate(d.getDate() + n); return ymd(d); }
+function nowHM() { const d = new Date(); return pad(d.getHours()) + ":" + pad(d.getMinutes()); }
+function niceTime(hm) {
+  if (!hm) return "";
+  const [H, M] = hm.split(":").map(Number);
+  return ((H + 11) % 12 + 1) + ":" + pad(M) + (H < 12 ? " AM" : " PM");
+}
+// minutes since the day started, so 1 AM sorts after 11 PM
+function dayMinutes(hm) { const [H, M] = (hm || "12:00").split(":").map(Number); return ((H - (+S.settings.dayStart || 0) + 24) % 24) * 60 + M; }
+function niceDate(date) {
+  const t = today();
+  if (date === t) return "Today";
+  if (date === shiftDay(t, -1)) return "Yesterday";
+  return new Date(date + "T12:00:00").toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
+}
+function shortDate(date) { return new Date(date + "T12:00:00").toLocaleDateString("en-US", { weekday: "short", day: "numeric" }); }
+
+function dayDoc(date) { return S.days[date] || { date, entries: [], steps: null }; }
+function liveEntries(date) {
+  return dayDoc(date).entries.filter((e) => !e.del).sort((a, b) => dayMinutes(a.time) - dayMinutes(b.time));
+}
+function totals(date) {
+  const t = { cal: 0, p: 0, c: 0, f: 0, fiber: 0, n: 0 };
+  for (const e of liveEntries(date)) { t.cal += +e.cal || 0; t.p += +e.p || 0; t.c += +e.c || 0; t.f += +e.f || 0; t.fiber += +e.fiber || 0; t.n++; }
+  return t;
+}
+// steps typed in the app win over the iPhone Shortcut's number for that day
+function stepsFor(date) {
+  const m = dayDoc(date).steps;
+  if (m && m.n != null) return { n: m.n, src: "typed" };
+  const s = S.steps[date];
+  return s ? { n: s.n, src: "iphone", at: s.at } : null;
+}
+async function saveDay(date, doc) {
+  S.days[date] = doc;
+  await put("day:" + date, doc);
+  if (!S.meta.dirty.includes(date)) S.meta.dirty.push(date);
+  await saveMeta();
+  scheduleSync(2500);
+}
+async function putEntry(date, entry) {
+  const doc = structuredClone(dayDoc(date));
+  entry.u = Date.now();
+  const i = doc.entries.findIndex((e) => e.id === entry.id);
+  if (i >= 0) doc.entries[i] = entry; else doc.entries.push(entry);
+  await saveDay(date, doc);
+}
+
+let toastTimer = 0;
+function toast(text, btnText, onBtn) {
+  $("toastText").textContent = text;
+  const b = $("toastBtn");
+  b.hidden = !btnText;
+  b.textContent = btnText || "";
+  b.onclick = () => { $("toast").classList.remove("show"); onBtn && onBtn(); };
+  $("toast").classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => $("toast").classList.remove("show"), btnText ? 6000 : 2600);
+}
+
+// ---------- photos ----------
+function scaled(img, max, q) {
+  const k = Math.min(1, max / Math.max(img.naturalWidth, img.naturalHeight));
+  const c = document.createElement("canvas");
+  c.width = Math.round(img.naturalWidth * k);
+  c.height = Math.round(img.naturalHeight * k);
+  c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+  return c.toDataURL("image/jpeg", q);
+}
+async function readPhoto(file) {
+  const url = URL.createObjectURL(file);
+  try {
+    const img = new Image();
+    img.src = url;
+    await img.decode();
+    // 1280px goes to Claude; the 720px copy is what the app keeps and backs up
+    return { big: scaled(img, 1280, 0.82), photo: scaled(img, 720, 0.74) };
+  } finally { URL.revokeObjectURL(url); }
+}
+async function photoData(id) {
+  if (!id) return null;
+  if (S.photos.has(id)) return S.photos.get(id);
+  let d = await get("photo:" + id);
+  if (!d && syncOn()) {
+    try { d = await ghPhoto(id); if (d) await put("photo:" + id, d); } catch { d = null; }
+  }
+  if (d) S.photos.set(id, d);
+  return d;
+}
+// fill <div data-photo="id"> backgrounds after a render
+function hydratePhotos() {
+  view.querySelectorAll("[data-photo]").forEach(async (el) => {
+    const d = await photoData(el.dataset.photo);
+    if (d) { el.style.backgroundImage = "url(" + d + ")"; el.textContent = ""; }
+  });
+}
+
+// ---------- Claude ----------
+let sdk = null;
+async function estimate({ photo, text, previous, correction }) {
+  const key = (S.settings.apiKey || "").trim();
+  if (!key) throw new Error("Add your Claude API key in Settings first.");
+  if (!sdk) sdk = await import(SDK_URL);
+  const Anthropic = sdk.default;
+  const client = new Anthropic({ apiKey: key, dangerouslyAllowBrowser: true, maxRetries: 1 });
+  const content = [];
+  if (photo) content.push({ type: "image", source: { type: "base64", media_type: "image/jpeg", data: photo.split(",")[1] } });
+  let ask = text ? "What I ate: " + text : "Estimate the meal in the photo.";
+  if (previous) ask += "\n\nYour earlier estimate:\n" + JSON.stringify(previous) + "\n\nMy correction: " + correction + "\n\nGive the full corrected estimate.";
+  content.push({ type: "text", text: ask });
+  let res;
+  try {
+    res = await client.beta.messages.create({
+      model: MODEL,
+      max_tokens: 8000,
+      betas: ["server-side-fallback-2026-07-01"],
+      fallbacks: "default",
+      output_config: { effort: "low", format: { type: "json_schema", schema: SCHEMA } },
+      system: SYSTEM,
+      messages: [{ role: "user", content }],
+    });
+  } catch (e) {
+    if (e instanceof Anthropic.AuthenticationError) throw new Error("Claude didn't accept the API key. Check it in Settings.");
+    if (e instanceof Anthropic.PermissionDeniedError) throw new Error("This API key isn't allowed to use " + MODEL + ".");
+    if (e instanceof Anthropic.RateLimitError) throw new Error("Too many requests or out of credit. Try again in a minute.");
+    if (e instanceof Anthropic.BadRequestError) throw new Error("Claude couldn't read that: " + (e.error?.error?.message || e.message));
+    if (e instanceof Anthropic.APIConnectionError) throw new Error("No connection to Claude. Check your signal and try again.");
+    if (e instanceof Anthropic.APIError) throw new Error("Claude had a problem (" + (e.status || "error") + "). Try again.");
+    throw e;
+  }
+  const u = res.usage || {};
+  const month = ymd(new Date()).slice(0, 7);
+  const m = S.meta.usage[month] || { n: 0, usd: 0 };
+  m.n++;
+  m.usd += (u.input_tokens || 0) * PRICE_IN + (u.output_tokens || 0) * PRICE_OUT;
+  S.meta.usage[month] = m;
+  saveMeta();
+  if (res.stop_reason === "refusal") throw new Error("Claude declined this one. Type the food in instead.");
+  if (res.stop_reason === "max_tokens") throw new Error("The answer got cut off. Try again.");
+  const block = res.content.find((b) => b.type === "text");
+  if (!block) throw new Error("Claude sent back nothing. Try again.");
+  return JSON.parse(block.text);
+}
+
+// ---------- GitHub backup + steps ----------
+const syncOn = () => !!(S.settings.token || "").trim();
+const repo = () => (S.settings.repo || DEFAULT_REPO).trim();
+const b64encode = (s) => {
+  const bytes = new TextEncoder().encode(s);
+  let bin = "";
+  for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+  return btoa(bin);
+};
+const b64decode = (b) => new TextDecoder().decode(Uint8Array.from(atob(b.replace(/\s/g, "")), (c) => c.charCodeAt(0)));
+async function gh(path, opts = {}) {
+  const r = await fetch("https://api.github.com/repos/" + repo() + "/contents/" + path, Object.assign({ cache: "no-store" }, opts, {
+    headers: { Authorization: "Bearer " + S.settings.token.trim(), Accept: "application/vnd.github+json" },
+  }));
+  if (r.status === 401 || r.status === 403) throw new Error("GitHub refused the token. It needs read and write access to " + repo() + ".");
+  return r;
+}
+async function ghGet(path) {
+  const r = await gh(path);
+  if (r.status === 404) return [null, undefined];
+  if (!r.ok) throw new Error("GitHub said " + r.status);
+  const b = await r.json();
+  return [JSON.parse(b64decode(b.content) || "null"), b.sha];
+}
+// true when saved; false when the file changed first (read again and retry)
+async function ghPut(path, b64, sha, message) {
+  const body = { message: message || "sync", content: b64 };
+  if (sha) body.sha = sha;
+  const r = await gh(path, { method: "PUT", body: JSON.stringify(body) });
+  if (r.status === 409 || r.status === 422) return false;
+  if (!r.ok) throw new Error("GitHub said " + r.status + " when saving");
+  return true;
+}
+async function ghList(path) {
+  const r = await gh(path);
+  if (r.status === 404) return [];
+  if (!r.ok) throw new Error("GitHub said " + r.status);
+  const list = await r.json();
+  return Array.isArray(list) ? list : [];
+}
+async function ghPhoto(id) {
+  const r = await gh("photos/" + id + ".jpg");
+  if (!r.ok) return null;
+  const b = await r.json();
+  return b.content ? "data:image/jpeg;base64," + b.content.replace(/\s/g, "") : null;
+}
+// Of two copies of one record, the one saved last; the repo's copy wins a tie.
+function newer(a, b) {
+  if (!a || typeof a !== "object") return b && typeof b === "object" ? b : null;
+  if (!b || typeof b !== "object") return a;
+  return (b.u || 0) > (a.u || 0) ? b : a;
+}
+function mergeById(remote, local) {
+  const map = new Map();
+  for (const x of remote || []) map.set(x.id, x);
+  for (const x of local || []) map.set(x.id, newer(map.get(x.id), x));
+  return [...map.values()].sort((a, b) => (a.id < b.id ? -1 : 1));
+}
+const mergeDay = (r, l) => ({ date: (r || l || {}).date, entries: mergeById((r || {}).entries, (l || {}).entries), steps: newer((r || {}).steps, (l || {}).steps) });
+const mergeFavs = (r, l) => ({ favs: mergeById((r || {}).favs, (l || {}).favs) });
+const mergeGoals = (r, l) => newer(r, l);
+// Merge one file with our copy and write it back when we add anything.
+async function syncFile(path, local, merge) {
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const [remote, sha] = await ghGet(path);
+    const merged = merge(remote, local);
+    if (JSON.stringify(merged) === JSON.stringify(merge(remote, null))) return merged;   // nothing new from this phone
+    if (await ghPut(path, b64encode(JSON.stringify(merged)), sha)) return merged;
+  }
+  throw new Error("the backup kept changing; will try again shortly");
+}
+
+let syncTimer = 0, syncing = false;
+S.syncStatus = "";
+function scheduleSync(ms) {
+  if (!syncOn()) return;
+  clearTimeout(syncTimer);
+  syncTimer = setTimeout(() => syncNow(), ms);
+}
+async function syncNow({ full = false } = {}) {
+  if (!syncOn() || syncing) return;
+  syncing = true;
+  setSyncStatus("Backing up…");
+  try {
+    // goals
+    const goals = Object.fromEntries(GOAL_KEYS.map((k) => [k, S.settings[k]]));
+    goals.u = S.settings.goalsU || 0;
+    const g = await syncFile("settings.json", goals, mergeGoals);
+    if (g && (g.u || 0) > (S.settings.goalsU || 0)) {
+      for (const k of GOAL_KEYS) if (g[k] != null) S.settings[k] = g[k];
+      S.settings.goalsU = g.u;
+      await saveSettings();
+    }
+    // saved meals
+    const f = await syncFile("favorites.json", { favs: S.favs }, mergeFavs);
+    S.favs = f.favs;
+    await put("favs", S.favs);
+    // days: everything changed here, plus the last two days in case another device logged something
+    const dates = new Set([...S.meta.dirty, today(), shiftDay(today(), -1)]);
+    if (full || !S.meta.restored) {
+      for (const it of await ghList("days")) { const m = /^(\d{4}-\d{2}-\d{2})\.json$/.exec(it.name); if (m) dates.add(m[1]); }
+    }
+    for (const date of dates) {
+      const merged = await syncFile("days/" + date + ".json", S.days[date] || null, mergeDay);
+      if (merged && (merged.entries.length || merged.steps)) { S.days[date] = merged; await put("day:" + date, merged); }
+      S.meta.dirty = S.meta.dirty.filter((d) => d !== date);
+    }
+    S.meta.restored = 1;
+    // photos that haven't gone up yet
+    for (const id of [...S.meta.photoQueue]) {
+      const d = await get("photo:" + id);
+      if (d) await ghPut("photos/" + id + ".jpg", d.split(",")[1], undefined, "photo");   // false = already there, which is fine
+      S.meta.photoQueue = S.meta.photoQueue.filter((x) => x !== id);
+    }
+    await saveMeta();
+    await pullSteps();
+    S.meta.lastSync = Date.now();
+    await saveMeta();
+    setSyncStatus("Backed up " + new Date().toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }));
+    if (["today", "history"].includes(route().name)) render();
+  } catch (e) {
+    setSyncStatus("Backup failed: " + e.message, true);
+  } finally { syncing = false; }
+}
+// The iPhone Shortcut writes steps/<date>_<steps>_<time>.json, so the file names alone carry the numbers.
+async function pullSteps() {
+  const list = await ghList("steps");
+  const next = {};
+  for (const it of list) {
+    const m = /^(\d{4}-\d{2}-\d{2})_([\d.,]+)(?:_(\d{4,6}))?/.exec(decodeURIComponent(it.name));
+    if (!m) continue;
+    const n = Math.round(parseFloat(m[2].replace(/,/g, "")));
+    if (!isFinite(n)) continue;
+    const cur = next[m[1]];
+    if (!cur || n > cur.n) next[m[1]] = { n, at: m[3] || "" };
+  }
+  S.steps = next;
+  await put("steps", S.steps);
+}
+function setSyncStatus(text, bad) {
+  S.syncStatus = text;
+  S.syncBad = !!bad;
+  const el = $("syncStatus");
+  if (el) { el.textContent = text; el.className = "small " + (bad ? "error" : "dim"); }
+}
+
+// ---------- routing ----------
+function route() {
+  const parts = location.hash.replace(/^#\/?/, "").split("/").filter(Boolean);
+  const name = parts[0] || "today";
+  return { name, args: parts.slice(1) };
+}
+window.addEventListener("hashchange", () => { window.scrollTo(0, 0); render(); });
+function go(hash) { if (location.hash === hash) render(); else location.hash = hash; }
+
+function render() {
+  const r = route();
+  const tab = { today: "today", day: "today", history: "history", add: "add", review: "add", edit: "today", favorites: "favorites", settings: "settings" }[r.name] || "today";
+  document.querySelectorAll("#tabs a").forEach((a) => a.classList.toggle("on", a.dataset.tab === tab));
+  const fn = { today: viewDay, day: viewDay, add: viewAdd, review: viewReview, edit: viewReview, history: viewHistory, favorites: viewFavs, settings: viewSettings }[r.name] || viewDay;
+  view.innerHTML = fn(r);
+  hydratePhotos();
+}
+
+// ---------- views ----------
+function ring(value, goal) {
+  const R = 56, C = 2 * Math.PI * R, frac = Math.min(1, goal ? value / goal : 0);
+  const over = value > goal * 1.05;
+  return `<svg width="132" height="132" viewBox="0 0 132 132">
+    <circle cx="66" cy="66" r="${R}" fill="none" stroke="var(--card2)" stroke-width="12"/>
+    <circle cx="66" cy="66" r="${R}" fill="none" stroke="${over ? "var(--bad)" : "var(--accent)"}" stroke-width="12" stroke-linecap="round"
+      stroke-dasharray="${C}" stroke-dashoffset="${C * (1 - frac)}"/></svg>`;
+}
+function macroBar(label, val, goal, color, big) {
+  const pct = goal ? Math.min(100, (val / goal) * 100) : 0;
+  return `<div class="macro${big ? " big" : ""}"><div class="spread"><span>${label}</span><span><b>${fmt(val)}</b><span class="dim"> / ${fmt(goal)} g</span></span></div>
+    <div class="bar"><i style="width:${pct}%;background:${color}"></i></div></div>`;
+}
+
+function viewDay(r) {
+  const date = r.name === "day" && /^\d{4}-\d{2}-\d{2}$/.test(r.args[0] || "") ? r.args[0] : today();
+  const s = S.settings, t = totals(date), left = s.cal - t.cal;
+  const st = stepsFor(date);
+  const isToday = date === today();
+  const entries = liveEntries(date);
+  const stepPct = st ? Math.min(100, (st.n / s.stepsGoal) * 100) : 0;
+  return `
+  <div class="datebar">
+    <button data-act="day" data-d="${shiftDay(date, -1)}" aria-label="Previous day">‹</button>
+    <div class="title"><b>${h(niceDate(date))}</b><span class="dim small">${isToday ? new Date(date + "T12:00:00").toLocaleDateString("en-US", { month: "long", day: "numeric" }) : ""}</span></div>
+    <button data-act="day" data-d="${shiftDay(date, 1)}" ${isToday ? "disabled style='opacity:.3'" : ""} aria-label="Next day">›</button>
+  </div>
+  <div class="card hero">
+    <div class="ring">${ring(t.cal, s.cal)}<div class="mid"><b>${fmt(Math.abs(left))}</b><span>${left >= 0 ? "cal left" : "cal over"}</span></div></div>
+    <div class="macros">
+      ${macroBar("Protein", t.p, s.protein, "var(--protein)", true)}
+      ${macroBar("Carbs", t.c, s.carbs, "var(--carbs)")}
+      ${macroBar("Fat", t.f, s.fat, "var(--fat)")}
+      <div class="small dim">${fmt(t.cal)} of ${fmt(s.cal)} cal eaten</div>
+    </div>
+  </div>
+  <div class="card steps" data-act="steps" data-d="${date}">
+    <div class="spread"><span class="dim small">Steps</span><span class="dim small">${st ? (st.src === "iphone" ? "from iPhone" + (st.at ? " · " + h(niceTime(st.at.slice(0, 2) + ":" + st.at.slice(2, 4))) : "") : "typed in") : "tap to enter"}</span></div>
+    <div class="spread"><b>${st ? fmt(st.n) : "—"}</b><span class="dim">/ ${fmt(s.stepsGoal)}</span></div>
+    <div class="bar"><i style="width:${stepPct}%;background:var(--accent)"></i></div>
+    <div id="stepsEdit"></div>
+  </div>
+  <div class="card">
+    <div class="spread"><b>Food</b><a class="small" href="#/add/${date}">+ Add</a></div>
+    ${entries.length ? entries.map((e) => `
+      <div class="entry" data-act="edit" data-d="${date}" data-id="${e.id}">
+        <div class="thumb" ${e.photo ? `data-photo="${e.photo}"` : ""}>${e.photo ? "" : e.src === "fav" ? "★" : "🍽"}</div>
+        <div class="info"><b>${h(e.title)}</b><span class="dim small">${h(niceTime(e.time))}</span></div>
+        <div class="nums"><b>${fmt(e.cal)}</b><span style="color:var(--protein)">${fmt(e.p)}g P</span></div>
+      </div>`).join("") : `<p class="dim small">Nothing logged ${isToday ? "yet today" : "this day"}. Tap + to snap your food.</p>`}
+  </div>`;
+}
+
+function viewAdd(r) {
+  const date = /^\d{4}-\d{2}-\d{2}$/.test(r.args[0] || "") ? r.args[0] : today();
+  const favs = S.favs.filter((f) => !f.del);
+  const d = S.draft && S.draft.stage === "input" && S.draft.date === date ? S.draft : null;
+  const noKey = !(S.settings.apiKey || "").trim();
+  return `
+  <h1>Log food${date !== today() ? ` <span class="dim small">· ${h(niceDate(date))}</span>` : ""}</h1>
+  ${noKey ? `<div class="card small">Photo and text estimates need your Claude API key. <a href="#/settings">Add it in Settings</a>. Saved meals and typing numbers work without it.</div>` : ""}
+  ${d && d.photo ? `<img class="preview" src="${d.photo}" alt="Your food"><div class="row" style="margin:8px 0 12px"><button class="btn ghost" data-act="pick">Change photo</button><button class="btn ghost" data-act="clearPhoto">Remove</button></div>`
+    : `<button class="photo-pick" data-act="pick"><span class="big">📷</span>Take or choose a photo</button>`}
+  <label class="field" style="margin-top:12px"><span>What did you eat? Add amounts if you know them</span>
+    <textarea id="foodText" data-bind="text" placeholder="e.g. 8 oz carne asada, cup of rice, pico">${h(d ? d.text : "")}</textarea></label>
+  <button class="btn primary block" data-act="estimate" data-d="${date}" ${noKey ? "disabled" : ""}>Estimate calories</button>
+  <div id="estStatus" style="margin-top:12px"></div>
+  <button class="btn ghost block" data-act="manual" data-d="${date}">Type the numbers myself</button>
+  ${favs.length ? `<h2>Saved meals · one tap logs it</h2><div class="favs">${favs.map((f) => `
+    <button class="fav" data-act="logFav" data-id="${f.id}" data-d="${date}"><b>${h(f.title)}</b><span>${fmt(f.cal)} cal · ${fmt(f.p)}g protein</span></button>`).join("")}</div>` : ""}`;
+}
+
+function draftTotals(d) {
+  const m = +d.servings || 1;
+  const sum = (k) => d.items.reduce((a, it) => a + (+it[k] || 0), 0) * m;
+  // no item list (saved meals, typed numbers): scale the per-serving numbers instead
+  const b = d.base || {};
+  const t = d.items.length ? { cal: sum("calories"), p: sum("protein"), c: sum("carbs"), f: sum("fat"), fiber: sum("fiber") }
+    : { cal: (+b.cal || 0) * m, p: (+b.p || 0) * m, c: (+b.c || 0) * m, f: (+b.f || 0) * m, fiber: (+b.fiber || 0) * m };
+  for (const k of ["cal", "p", "c", "f"]) if (d.override && d.override[k] != null && d.override[k] !== "") t[k] = +d.override[k];
+  return t;
+}
+
+function viewReview() {
+  const d = S.draft;
+  if (!d || d.stage !== "review") return `<p class="dim">Nothing to review. <a href="#/add">Log food</a></p>`;
+  const t = draftTotals(d);
+  const canRedo = (d.photo || d.text) && (S.settings.apiKey || "").trim();
+  const servings = [0.5, 0.75, 1, 1.25, 1.5, 2];
+  const lbl = { 0.5: "½", 0.75: "¾", 1: "1", 1.25: "1¼", 1.5: "1½", 2: "2" };
+  return `
+  <h1>${d.editing ? "Edit" : "Check it"}</h1>
+  ${d.photo ? `<img class="preview" src="${d.photo}" alt="Your food" style="margin-bottom:12px">` : ""}
+  <div class="card">
+    <label class="field"><span>Name</span><input type="text" data-bind="title" value="${h(d.title)}"></label>
+    ${d.confidence ? `<div class="row" style="margin-bottom:8px"><span class="pill ${h(d.confidence)}">${h(d.confidence)} confidence</span></div>` : ""}
+    ${d.note ? `<p class="small dim" style="margin:0 0 8px">${h(d.note)}</p>` : ""}
+    ${d.items.length ? d.items.map((it, i) => `
+      <div class="item"><div class="info"><b>${h(it.name)}</b><div class="small dim">${h(it.portion)} · ${fmt(it.calories)} cal · ${fmt(it.protein)}g P</div></div>
+        <button class="x" data-act="dropItem" data-i="${i}" aria-label="Remove ${h(it.name)}">×</button></div>`).join("") : ""}
+  </div>
+  <div class="card">
+    <div class="small dim" style="margin-bottom:8px">How much of it did you eat?</div>
+    <div class="seg">${servings.map((v) => `<button class="${(+d.servings || 1) === v ? "on" : ""}" data-act="servings" data-v="${v}">${lbl[v]}×</button>`).join("")}</div>
+    <div class="totals" style="margin-top:14px">
+      ${[["cal", "Calories"], ["p", "Protein"], ["c", "Carbs"], ["f", "Fat"]].map(([k, l]) => `
+        <label><span>${l}</span><input type="number" inputmode="decimal" data-bind="tot" data-k="${k}" value="${r0(t[k])}"></label>`).join("")}
+    </div>
+    <label class="field" style="margin-top:14px"><span>Time</span><input type="time" data-bind="time" value="${h(d.time)}"></label>
+    ${d.src !== "fav" ? `<label class="check"><input type="checkbox" data-bind="saveFav" ${d.saveFav ? "checked" : ""}> Save to my meals for one-tap logging</label>` : ""}
+  </div>
+  ${canRedo ? `<div class="card">
+    <label class="field" style="margin:0"><span>Something off? Tell Claude</span>
+      <input type="text" id="fixText" placeholder="e.g. it was 6 oz of steak, no rice"></label>
+    <button class="btn block" style="margin-top:10px" data-act="redo">Fix the estimate</button>
+    <div id="estStatus" style="margin-top:10px"></div>
+  </div>` : ""}
+  <button class="btn primary block" data-act="saveEntry">Save · ${fmt(t.cal)} cal, ${fmt(t.p)}g protein</button>
+  <div class="row" style="margin-top:8px">
+    <button class="btn ghost" style="flex:1" data-act="cancel">Cancel</button>
+    ${d.editing ? `<button class="btn danger" style="flex:1" data-act="deleteEntry">Delete</button>` : ""}
+  </div>`;
+}
+
+function viewHistory() {
+  const s = S.settings, t0 = today();
+  const days = Array.from({ length: 28 }, (_, i) => shiftDay(t0, -i));
+  const week = (start) => {
+    const ds = Array.from({ length: 7 }, (_, i) => shiftDay(start, -i)).filter((d) => totals(d).n > 0);
+    const stepsDs = Array.from({ length: 7 }, (_, i) => shiftDay(start, -i)).map(stepsFor).filter(Boolean);
+    const avg = (f) => (ds.length ? ds.reduce((a, d) => a + f(totals(d)), 0) / ds.length : null);
+    return { cal: avg((x) => x.cal), p: avg((x) => x.p), steps: stepsDs.length ? stepsDs.reduce((a, x) => a + x.n, 0) / stepsDs.length : null,
+      hitP: ds.filter((d) => totals(d).p >= s.protein * 0.95).length, logged: ds.length };
+  };
+  // weeks end yesterday, so a half-eaten today doesn't drag the average down
+  const w1 = week(shiftDay(t0, -1)), w2 = week(shiftDay(t0, -8));
+  const arrow = (a, b, goodUp) => (a == null || b == null || Math.abs(a - b) < 1 ? "" : (a > b) === goodUp ? ` <span class="ok">▲</span>` : ` <span class="no">▼</span>`);
+  const calClass = (cal) => (Math.abs(cal - s.cal) <= s.cal * 0.1 ? "ok" : cal < s.cal ? "meh" : "no");
+  return `
+  <h1>History</h1>
+  <div class="card">
+    <div class="small dim" style="margin-bottom:10px">Last 7 days (not counting today) · ${w1.logged} days logged</div>
+    <div class="avg">
+      <div><b>${w1.cal == null ? "—" : fmt(w1.cal)}</b><span>avg cal${arrow(w1.cal, w2.cal, false)}</span></div>
+      <div><b style="color:var(--protein)">${w1.p == null ? "—" : fmt(w1.p) + "g"}</b><span>avg protein${arrow(w1.p, w2.p, true)}</span></div>
+      <div><b>${w1.steps == null ? "—" : fmt(w1.steps)}</b><span>avg steps${arrow(w1.steps, w2.steps, true)}</span></div>
+    </div>
+    <p class="small dim" style="margin:12px 0 0">Hit protein on ${w1.hitP} of ${w1.logged || 0} logged days. Targets: ${fmt(s.cal)} cal, ${fmt(s.protein)}g protein, ${fmt(s.stepsGoal)} steps.</p>
+  </div>
+  <div class="card">
+    <div class="hrow small dim" style="border:0;padding-top:0"><span>Day</span><span>Calories</span><span>Protein</span><span>Steps</span></div>
+    ${days.map((d) => {
+      const t = totals(d), st = stepsFor(d);
+      return `<a class="hrow" href="#/day/${d}">
+        <span>${h(d === t0 ? "Today" : shortDate(d))}</span>
+        <span>${t.n ? `<span class="${calClass(t.cal)}">${fmt(t.cal)}</span><div class="bar"><i style="width:${Math.min(100, (t.cal / s.cal) * 100)}%;background:var(--accent)"></i></div>` : `<span class="dim">—</span>`}</span>
+        <span class="${t.n ? (t.p >= s.protein * 0.95 ? "ok" : "meh") : "dim"}">${t.n ? fmt(t.p) + "g" : "—"}</span>
+        <span class="${st ? (st.n >= s.stepsGoal ? "ok" : "") : "dim"}">${st ? (st.n / 1000).toFixed(1) + "k" : "—"}</span>
+      </a>`;
+    }).join("")}
+  </div>`;
+}
+
+function viewFavs() {
+  const favs = S.favs.filter((f) => !f.del);
+  return `
+  <h1>Saved meals</h1>
+  <p class="small dim">These show on the log screen so your regular food is one tap. Save more from the check screen after an estimate.</p>
+  <div class="card">
+  ${favs.length ? favs.map((f) => `
+    <div class="item"><div class="info"><b>${h(f.title)}</b><div class="small dim">${f.sub ? h(f.sub) + " · " : ""}${fmt(f.cal)} cal · ${fmt(f.p)}g P · ${fmt(f.c)}g C · ${fmt(f.f)}g F</div></div>
+      <button class="x" data-act="editFav" data-id="${f.id}" aria-label="Edit ${h(f.title)}">✎</button>
+      <button class="x" data-act="dropFav" data-id="${f.id}" aria-label="Remove ${h(f.title)}">×</button></div>`).join("") : `<p class="dim small">No saved meals yet.</p>`}
+  </div>
+  <div id="favEdit"></div>
+  <button class="btn block" data-act="newFav">+ New saved meal</button>`;
+}
+
+function favForm(f) {
+  return `<div class="card">
+    <label class="field"><span>Name</span><input type="text" id="ff_title" value="${h(f.title || "")}"></label>
+    <label class="field"><span>Details (optional)</span><input type="text" id="ff_sub" value="${h(f.sub || "")}"></label>
+    <div class="totals">${[["cal", "Calories"], ["p", "Protein"], ["c", "Carbs"], ["f", "Fat"]].map(([k, l]) => `
+      <label><span>${l}</span><input type="number" inputmode="decimal" id="ff_${k}" value="${f[k] != null ? r0(f[k]) : ""}"></label>`).join("")}</div>
+    <button class="btn primary block" style="margin-top:12px" data-act="saveFav" data-id="${h(f.id || "")}">Save meal</button>
+  </div>`;
+}
+
+function viewSettings() {
+  const s = S.settings;
+  const month = ymd(new Date()).slice(0, 7), use = S.meta.usage[month];
+  const num = (k, label, step) => `<label class="field"><span>${label}</span><input type="number" inputmode="numeric" step="${step || 1}" data-set="${k}" value="${h(s[k])}"></label>`;
+  const stepsURL = "https://api.github.com/repos/" + repo() + "/contents/steps/";
+  return `
+  <h1>Settings</h1>
+  <h2>Daily targets</h2>
+  <div class="card">
+    <div class="grid2">${num("cal", "Calories")}${num("protein", "Protein (g)")}${num("carbs", "Carbs (g)")}${num("fat", "Fat (g)")}${num("stepsGoal", "Steps", 500)}
+      <label class="field"><span>New day starts at</span><select data-set="dayStart">${[0, 1, 2, 3, 4, 5, 6].map((v) => `<option value="${v}" ${+s.dayStart === v ? "selected" : ""}>${v === 0 ? "Midnight" : v + " AM"}</option>`).join("")}</select></label></div>
+    <p class="small dim" style="margin:0">Food you log before this time counts toward the day before, so a 1 AM snack lands on the day you were still up for.</p>
+  </div>
+
+  <h2>Claude (photo estimates)</h2>
+  <div class="card">
+    <label class="field"><span>Anthropic API key</span><input type="password" autocomplete="off" data-set="apiKey" placeholder="sk-ant-…" value="${h(s.apiKey)}"></label>
+    <p class="small dim" style="margin:0">Stays on this phone only and is never backed up. Get one at console.anthropic.com → API Keys. Estimates use ${MODEL}; this month: ${use ? use.n + " estimates, about $" + use.usd.toFixed(2) : "none yet"}.</p>
+  </div>
+
+  <h2>Backup</h2>
+  <div class="card">
+    <label class="field"><span>Private GitHub repo</span><input type="text" autocapitalize="off" data-set="repo" value="${h(s.repo)}"></label>
+    <label class="field"><span>GitHub token (read and write to that repo)</span><input type="password" autocomplete="off" data-set="token" placeholder="github_pat_…" value="${h(s.token)}"></label>
+    <div id="syncStatus" class="small ${S.syncBad ? "error" : "dim"}">${h(S.syncStatus || (syncOn() ? "" : "Not backed up yet: everything lives on this phone only."))}</div>
+    <div class="row" style="margin-top:10px"><button class="btn" style="flex:1" data-act="sync">Back up now</button><button class="btn" style="flex:1" data-act="restore">Pull everything</button></div>
+    <p class="small dim" style="margin:10px 0 0">Your log and photos are copied to the private repo, so a new phone gets everything back with "Pull everything". The same token lets the iPhone Shortcut send your steps.</p>
+  </div>
+
+  <h2>Steps from your iPhone</h2>
+  <div class="card small">
+    <p style="margin-top:0">Make a Shortcut once and your step count shows up here every night. In the Shortcuts app tap + and add these actions:</p>
+    <ol class="steps-how">
+      <li><b>Find Health Samples</b> where Type is <b>Steps</b> and Start Date is <b>Today</b>.</li>
+      <li><b>Calculate Statistics</b>: <b>Sum</b> of Health Samples.</li>
+      <li><b>Round Number</b> to Ones Place.</li>
+      <li><b>Format Date</b>: Current Date, Custom, <code>yyyy-MM-dd</code>.</li>
+      <li><b>Format Date</b> again: Current Date, Custom, <code>HHmmss</code>.</li>
+      <li><b>Get Contents of URL</b>: <code>${h(stepsURL)}</code> then the first Formatted Date, <code>_</code>, the Rounded Number, <code>_</code>, the second Formatted Date, <code>.json</code>.
+        Show More → Method <b>PUT</b>. Headers: <code>Authorization</code> = <code>Bearer </code> + your token, <code>Accept</code> = <code>application/vnd.github+json</code>.
+        Request Body <b>JSON</b>: <code>message</code> = <code>steps</code>, <code>content</code> = <code>e30=</code>.</li>
+    </ol>
+    <p>Then Automation → New → <b>Time of Day</b> 11:58 PM, Daily, <b>Run Immediately</b>, and pick the Shortcut. Run it by hand any time to update today.</p>
+  </div>
+
+  <h2>Your data</h2>
+  <div class="card"><button class="btn block" data-act="export">Download everything as a file</button></div>
+  <p class="small dim" style="text-align:center">Plate · your food log lives on this phone${syncOn() ? " and in your private backup" : ""}.</p>`;
+}
+
+// ---------- actions ----------
+const ACT = {
+  day(b) { go(b.dataset.d === today() ? "#/" : "#/day/" + b.dataset.d); },
+  steps(b, e) {
+    if (e.target.closest("#stepsEdit")) return;
+    const date = b.dataset.d, st = stepsFor(date), m = dayDoc(date).steps;
+    $("stepsEdit").innerHTML = `<div class="row" style="margin-top:10px"><input type="number" inputmode="numeric" id="stepsIn" placeholder="Steps" value="${st ? st.n : ""}">
+      <button class="btn primary" data-act="saveSteps" data-d="${date}">Save</button>${m && m.n != null ? `<button class="btn ghost" data-act="clearSteps" data-d="${date}">Use iPhone</button>` : ""}</div>`;
+    $("stepsIn").focus();
+  },
+  async saveSteps(b) {
+    const n = Math.round(+$("stepsIn").value);
+    if (!(n >= 0)) return;
+    const doc = structuredClone(dayDoc(b.dataset.d));
+    doc.steps = { n, u: Date.now() };
+    await saveDay(b.dataset.d, doc);
+    render();
+  },
+  async clearSteps(b) {
+    const doc = structuredClone(dayDoc(b.dataset.d));
+    doc.steps = { n: null, u: Date.now() };
+    await saveDay(b.dataset.d, doc);
+    render();
+  },
+  pick() { $("photoIn").value = ""; $("photoIn").click(); },
+  clearPhoto() { if (S.draft) { S.draft.photo = null; S.draft.big = null; saveDraft(); } render(); },
+  async estimate(b) {
+    const date = b.dataset.d;
+    const d = ensureInputDraft(date);
+    d.text = ($("foodText").value || "").trim();
+    if (!d.photo && !d.text) return statusMsg("Take a photo or type what you ate first.", true);
+    b.disabled = true;
+    statusMsg("busy");
+    try {
+      const est = await estimate({ photo: d.big || d.photo, text: d.text });
+      toReview(d, est);
+    } catch (e) {
+      b.disabled = false;
+      statusMsg(e.message, true);
+    }
+  },
+  manual(b) {
+    const d = ensureInputDraft(b.dataset.d);
+    d.text = ($("foodText")?.value || "").trim();
+    S.draft = Object.assign(d, { stage: "review", title: d.text.slice(0, 40) || "Food", items: [], servings: 1, override: {}, src: d.photo ? "photo" : "manual" });
+    saveDraft();
+    go("#/review");
+  },
+  async logFav(b) {
+    const f = S.favs.find((x) => x.id === b.dataset.id);
+    if (!f) return;
+    const date = b.dataset.d;
+    const entry = { id: uid(), time: date === today() ? nowHM() : "12:00", title: f.title, items: f.items || [], servings: 1,
+      cal: r0(f.cal), p: r0(f.p), c: r0(f.c), f: r0(f.f), fiber: r0(f.fiber), photo: null, text: "", note: "", confidence: "", src: "fav", fav: f.id };
+    await putEntry(date, entry);
+    go(date === today() ? "#/" : "#/day/" + date);
+    toast("Logged " + f.title, "Undo", async () => { await putEntry(date, Object.assign({}, entry, { del: true })); render(); });
+  },
+  dropItem(b) { S.draft.items.splice(+b.dataset.i, 1); S.draft.override = {}; saveDraft(); render(); },
+  servings(b) { S.draft.servings = +b.dataset.v; S.draft.override = {}; saveDraft(); render(); },
+  async redo(b) {
+    const d = S.draft, fix = ($("fixText").value || "").trim();
+    if (!fix) return statusMsg("Say what's off first, like \"it was 6 oz\".", true);
+    b.disabled = true;
+    statusMsg("busy");
+    try {
+      const previous = { title: d.title, items: d.items, servings: d.servings };
+      const est = await estimate({ photo: d.big || d.photo, text: d.text, previous, correction: fix });
+      d.text = d.text ? d.text + " (" + fix + ")" : fix;
+      Object.assign(d, { title: est.title, items: est.items, confidence: est.confidence, note: est.note, servings: 1, override: {} });
+      saveDraft();
+      render();
+      toast("Updated");
+    } catch (e) {
+      b.disabled = false;
+      statusMsg(e.message, true);
+    }
+  },
+  async saveEntry() {
+    const d = S.draft, t = draftTotals(d);
+    let photoId = d.photoId || null;
+    if (d.photo && !photoId) {
+      photoId = uid();
+      await put("photo:" + photoId, d.photo);
+      S.photos.set(photoId, d.photo);
+      S.meta.photoQueue.push(photoId);
+    }
+    const entry = { id: d.id || uid(), time: d.time || nowHM(), title: (d.title || "Food").trim(), items: d.items, servings: +d.servings || 1,
+      cal: r0(t.cal), p: r0(t.p), c: r0(t.c), f: r0(t.f), fiber: r0(t.fiber), photo: photoId, text: d.text || "",
+      note: d.note || "", confidence: d.confidence || "", src: d.src || "manual" };
+    await putEntry(d.date, entry);
+    if (d.saveFav) {
+      S.favs.push({ id: uid(), title: entry.title, sub: d.items.map((i) => i.name).slice(0, 4).join(", "), items: d.items,
+        cal: entry.cal, p: entry.p, c: entry.c, f: entry.f, fiber: entry.fiber, u: Date.now() });
+      await put("favs", S.favs);
+    }
+    const date = d.date;
+    S.draft = null;
+    await put("draft", null);
+    go(date === today() ? "#/" : "#/day/" + date);
+    toast("Saved " + entry.title + " · " + fmt(entry.cal) + " cal");
+  },
+  async deleteEntry() {
+    const d = S.draft, old = dayDoc(d.date).entries.find((e) => e.id === d.id);
+    if (!old) return;
+    await putEntry(d.date, Object.assign({}, old, { del: true }));
+    const date = d.date;
+    S.draft = null;
+    await put("draft", null);
+    go(date === today() ? "#/" : "#/day/" + date);
+    toast("Deleted " + old.title, "Undo", async () => { await putEntry(date, Object.assign({}, old, { del: false })); render(); });
+  },
+  async cancel() {
+    const date = S.draft?.date || today();
+    const editing = S.draft?.editing;
+    S.draft = null;
+    await put("draft", null);
+    go(editing ? (date === today() ? "#/" : "#/day/" + date) : "#/add" + (date === today() ? "" : "/" + date));
+  },
+  async edit(b) {
+    const e = dayDoc(b.dataset.d).entries.find((x) => x.id === b.dataset.id);
+    if (!e) return;
+    const photo = await photoData(e.photo);
+    S.draft = { stage: "review", editing: true, id: e.id, date: b.dataset.d, time: e.time, title: e.title, items: structuredClone(e.items || []),
+      servings: e.servings || 1, photo, photoId: e.photo, big: null, text: e.text || "", note: e.note, confidence: e.confidence, src: e.src,
+      base: Object.fromEntries(["cal", "p", "c", "f", "fiber"].map((k) => [k, (+e[k] || 0) / (e.servings || 1)])),
+      // keep the saved numbers exactly as they were unless something changes
+      override: { cal: e.cal, p: e.p, c: e.c, f: e.f } };
+    saveDraft();
+    go("#/edit");
+  },
+  newFav() { $("favEdit").innerHTML = favForm({}); $("ff_title").focus(); },
+  editFav(b) { const f = S.favs.find((x) => x.id === b.dataset.id); $("favEdit").innerHTML = favForm(f); $("ff_title").scrollIntoView({ behavior: "smooth", block: "center" }); },
+  async saveFav(b) {
+    const v = (k) => ($("ff_" + k).value || "").trim();
+    if (!v("title")) return $("ff_title").focus();
+    const id = b.dataset.id;
+    const rec = { title: v("title"), sub: v("sub"), cal: r0(v("cal")), p: r0(v("p")), c: r0(v("c")), f: r0(v("f")), u: Date.now() };
+    const i = S.favs.findIndex((x) => x.id === id);
+    if (i >= 0) S.favs[i] = Object.assign({}, S.favs[i], rec); else S.favs.push(Object.assign({ id: uid(), items: [], fiber: 0 }, rec));
+    await put("favs", S.favs);
+    scheduleSync(2000);
+    render();
+  },
+  async dropFav(b) {
+    const i = S.favs.findIndex((x) => x.id === b.dataset.id);
+    if (i < 0) return;
+    const old = S.favs[i];
+    S.favs[i] = Object.assign({}, old, { del: true, u: Date.now() });
+    await put("favs", S.favs);
+    scheduleSync(2000);
+    render();
+    toast("Removed " + old.title, "Undo", async () => { S.favs[i] = Object.assign({}, old, { del: false, u: Date.now() }); await put("favs", S.favs); render(); });
+  },
+  sync() { if (!syncOn()) return setSyncStatus("Add the GitHub token first.", true); syncNow(); },
+  restore() { if (!syncOn()) return setSyncStatus("Add the GitHub token first.", true); syncNow({ full: true }); },
+  async export() {
+    const photos = {};
+    for (const k of await allKeys()) if (String(k).startsWith("photo:")) photos[k.slice(6)] = await get(k);
+    const data = { app: "plate", exported: new Date().toISOString(), settings: Object.fromEntries(GOAL_KEYS.map((k) => [k, S.settings[k]])),
+      favs: S.favs, days: S.days, steps: S.steps, photos };
+    const blob = new Blob([JSON.stringify(data)], { type: "application/json" });
+    const file = new File([blob], "plate-" + today() + ".json", { type: "application/json" });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) { try { await navigator.share({ files: [file] }); return; } catch { /* fall through to download */ } }
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = file.name;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+  },
+};
+
+function ensureInputDraft(date) {
+  if (!S.draft || S.draft.stage !== "input" || S.draft.date !== date) S.draft = { stage: "input", date, photo: null, big: null, text: "" };
+  return S.draft;
+}
+function toReview(d, est) {
+  S.draft = Object.assign(d, { stage: "review", time: d.date === today() ? nowHM() : "12:00", title: est.title, items: est.items,
+    confidence: est.confidence, note: est.note, servings: 1, override: {}, src: d.photo ? "photo" : "text", saveFav: false });
+  saveDraft();
+  go("#/review");
+}
+function statusMsg(text, bad) {
+  const el = $("estStatus");
+  if (!el) return;
+  el.innerHTML = text === "busy" ? `<div class="row"><div class="spinner"></div><span class="dim">Claude is reading your food…</span></div>`
+    : `<p class="small ${bad ? "error" : "dim"}" style="margin:0">${h(text)}</p>`;
+}
+
+view.addEventListener("click", (e) => {
+  const b = e.target.closest("[data-act]");
+  if (!b || b.disabled) return;
+  const fn = ACT[b.dataset.act];
+  if (fn) fn(b, e);
+});
+view.addEventListener("input", (e) => {
+  const t = e.target;
+  if (t.dataset.bind === "text") {
+    const a = route().args[0];
+    ensureInputDraft(/^\d{4}-\d{2}-\d{2}$/.test(a || "") ? a : today()).text = t.value;
+    return saveDraft();
+  }
+  const d = S.draft;
+  if (!t.dataset.bind || !d) return;
+  const k = t.dataset.bind;
+  if (k === "tot") {
+    d.override = d.override || {};
+    d.override[t.dataset.k] = t.value;
+    const save = view.querySelector('[data-act="saveEntry"]');
+    const tt = draftTotals(d);
+    if (save) save.textContent = "Save · " + fmt(tt.cal) + " cal, " + fmt(tt.p) + "g protein";
+  } else if (k === "saveFav") d.saveFav = t.checked;
+  else d[k] = t.value;
+  saveDraft();
+});
+view.addEventListener("change", async (e) => {
+  const t = e.target;
+  if (t.dataset.bind === "saveFav" && S.draft) { S.draft.saveFav = t.checked; saveDraft(); return; }
+  const k = t.dataset.set;
+  if (!k) return;
+  let v = t.value.trim();
+  if (GOAL_KEYS.includes(k)) { v = +v; if (!(v >= 0)) return; S.settings.goalsU = Date.now(); }
+  S.settings[k] = v;
+  await saveSettings();
+  if (k === "token" || k === "repo") { S.meta.restored = 0; await saveMeta(); if (syncOn()) syncNow(); else setSyncStatus("Not backed up: everything lives on this phone only."); }
+  else if (GOAL_KEYS.includes(k)) scheduleSync(2000);
+  toast("Saved");
+});
+$("photoIn").addEventListener("change", async () => {
+  const file = $("photoIn").files[0];
+  if (!file) return;
+  const r = route();
+  const date = r.name === "add" && /^\d{4}-\d{2}-\d{2}$/.test(r.args[0] || "") ? r.args[0] : today();
+  const d = ensureInputDraft(date);
+  const typed = $("foodText")?.value;
+  if (typed != null) d.text = typed;
+  try {
+    Object.assign(d, await readPhoto(file));
+    saveDraft();
+    render();
+  } catch {
+    toast("Couldn't open that photo. Try another one.");
+  }
+});
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState !== "visible") return;
+  // after a long time away, pull new steps and show the right day
+  if (Date.now() - (S.meta.lastSync || 0) > 10 * 60e3) syncNow();
+  if (["today"].includes(route().name)) render();
+});
+
+// ---------- boot ----------
+await load();
+if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
+// The review screen survives the app being closed mid-log; anything else starts on Today.
+if (["review", "edit"].includes(route().name) && !(S.draft && S.draft.stage === "review")) location.hash = "#/";
+render();
+if (syncOn()) syncNow();
+</script>
+</body>
+</html>

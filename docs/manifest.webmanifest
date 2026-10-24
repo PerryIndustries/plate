@@ -1,0 +1,19 @@
+{
+  "name": "Plate",
+  "short_name": "Plate",
+  "description": "Snap your food, get calories and protein, track your steps.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0F1110",
+  "theme_color": "#0F1110",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Log food", "url": "./#/add", "icons": [{ "src": "icon-192.png", "sizes": "192x192" }] }
+  ]
+}
