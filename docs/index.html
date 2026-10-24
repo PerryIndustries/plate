@@ -42,7 +42,7 @@
   .btn.ghost { background: transparent; color: var(--dim); }
   .btn.block { width: 100%; }
   .btn:disabled { opacity: .5; }
-  input[type=text], input[type=number], input[type=password], input[type=time], textarea, select {
+  input[type=text], input[type=number], input[type=password], input[type=time], input[type=tel], textarea, select {
     width: 100%; background: var(--card2); border: 1px solid var(--line); border-radius: 12px; padding: 12px; outline: none; }
   input:focus, textarea:focus, select:focus { border-color: var(--accent); }
   textarea { resize: vertical; min-height: 76px; }
@@ -223,6 +223,34 @@
   .composer .btn { flex: none; }
   .notes { white-space: pre-wrap; margin: 0; font-family: inherit; font-size: 13px; line-height: 1.5; max-height: 45vh; overflow: auto; }
 
+  /* moments: calm blue, big targets, nothing that shouts */
+  .wavebtn { background: rgba(90,169,255,.14); border: 1px solid rgba(90,169,255,.35); color: var(--text); margin-bottom: 12px; font-size: 17px; }
+  .wavecard { border: 1px solid rgba(90,169,255,.45); }
+  .x { background: var(--card2); border: 0; border-radius: 10px; width: 36px; height: 36px; color: var(--dim); font-size: 18px; flex: none; }   /* the base look; the list-specific rules above still win */
+  .calm { text-align: center; padding: 18px 0 6px; }
+  .calm h1 { font-size: 30px; line-height: 1.15; margin: 0 0 10px; }
+  .calm p { margin: 0 0 10px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip { display: inline-flex; align-items: center; border: 1px solid var(--line); background: var(--card2); color: var(--text); border-radius: 99px;
+    padding: 9px 14px; min-height: 40px; font-size: 15px; }
+  .chip.on { background: rgba(90,169,255,.22); border-color: var(--protein); font-weight: 600; }
+  .chip button { background: none; border: 0; color: var(--dim); padding: 0 0 0 8px; font-size: 17px; line-height: 1; }
+  input[type=range].big { width: 100%; height: 44px; margin: 6px 0; accent-color: var(--protein); }
+  .scale { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+  .scale button { min-height: 60px; border: 0; border-radius: 12px; background: var(--card2); font-size: 24px; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 2px; }
+  .scale button span { font-size: 12px; color: var(--dim); }
+  .scale button.on { background: rgba(90,169,255,.22); box-shadow: inset 0 0 0 2px var(--protein); font-weight: 700; }
+  .scale.ten button { min-height: 52px; font-size: 20px; }   /* 1-10 as two rows of five: iOS sliders don't jump to a tap, buttons do */
+  .ends { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .ends button { min-height: 56px; border: 1px solid var(--line); border-radius: 12px; background: var(--card2); font-weight: 600; }
+  .ends button.on { background: rgba(90,169,255,.22); border-color: var(--protein); }
+  .pstep { display: flex; gap: 12px; align-items: flex-start; padding: 12px 0; border-top: 1px solid var(--line); }
+  .pstep:first-child { border-top: 0; padding-top: 0; }
+  .pstep .tick { width: 48px; flex: none; }
+  .pstep.done .tick { background: var(--protein); color: #06210F; }
+  .btn.recording { background: var(--bad); color: #fff; }
+
   #toast { position: fixed; left: 50%; bottom: calc(96px + env(safe-area-inset-bottom)); transform: translateX(-50%) translateY(20px);
     background: #2B302E; color: var(--text); padding: 12px 16px; border-radius: 12px; display: flex; gap: 14px; align-items: center;
     opacity: 0; pointer-events: none; transition: .2s; z-index: 9; max-width: calc(100% - 32px); box-shadow: 0 8px 30px rgba(0,0,0,.4); }
@@ -252,7 +280,9 @@ const MODEL = "claude-opus-5-5";
 const PRICE_IN = 4 / 1e6, PRICE_OUT = 20 / 1e6, PRICE_CACHE_W = 5 / 1e6, PRICE_CACHE_R = 0.2 / 1e6;
 const DEFAULT_REPO = "PerryIndustries/plate-data";
 const DEFAULTS = { cal: 2050, protein: 160, carbs: 215, fat: 60, stepsGoal: 9000, dayStart: 4, goalsU: 0,
-  apiKey: "", token: "", repo: DEFAULT_REPO, backupProgress: true, restTimer: true, writeNotes: true };
+  apiKey: "", token: "", repo: DEFAULT_REPO, backupProgress: true, restTimer: true, writeNotes: true,
+  // moments: phone-only unless he opts in; the contact never syncs (settings.json carries GOAL_KEYS only)
+  momentsBackup: false, momentsAudioBackup: false, talkMoments: false, waveContactName: "", waveContactPhone: "" };
 // weight stays off the profile unless he turns it on: the profile is about showing up, not the scale
 const PROFILE_DEFAULT = { name: "Me", goal: 150, avatar: null, showWeight: false, u: 0 };
 const GOAL_KEYS = ["cal", "protein", "carbs", "fat", "stepsGoal", "dayStart"];
@@ -323,7 +353,7 @@ Safety: If he mentions self-harm, not wanting to be here, or being in danger: st
 
 const NOTES_SYSTEM = `You keep Perry's private talk notes: short patterns and insights from his conversations with a friend-mentor, used to give the next conversation context. You get the current notes file and a conversation that just ended. Return the full updated notes file in "notes" and, in "summary", one short plain sentence telling Perry what you added or changed (or that nothing needed adding).
 
-Keep the file's title and every existing section and its order exactly as they are (the usual ones are "Patterns I've noticed", "Things I've learned about myself", "What helps", "Threads to come back to"; there may be others, such as a numbered playbook — keep those intact and only edit them if this talk clearly changed them). New dated lines go in the usual four sections. Each line starts with "- YYYY-MM-DD: " using the date of the talk. Use his own words where possible. Keep it short: no transcripts, no quotes longer than a few words, nothing he asked to keep out. Merge with existing lines (refine a line rather than adding a near-duplicate) and keep every existing line unless you are refining it. If nothing new came up, return the notes unchanged.`;
+Keep the file's title and every existing section and its order exactly as they are (the usual ones are "Patterns I've noticed", "Things I've learned about myself", "What helps", "Threads to come back to"; there may be others, such as a numbered playbook — keep those intact and only edit them if this talk clearly changed them). New dated lines go in the usual four sections. Each line starts with "- YYYY-MM-DD: " using the date of the talk. Use his own words where possible. Keep it short: no transcripts, no quotes longer than a few words, nothing he asked to keep out. Merge with existing lines (refine a line rather than adding a near-duplicate) and keep every existing line unless you are refining it. If nothing new came up, return the notes unchanged. Don't record counts or statistics from the Moments summary in the notes.`;
 
 // the shared file starts from this when there are no notes yet
 const NOTES_TEMPLATE = `# Talk notes (private, Perry's)
@@ -357,17 +387,18 @@ function kv(mode, op) {
 }
 const get = (k) => db ? kv("readonly", (s) => s.get(k)) : Promise.resolve(mem.get(k));
 const put = (k, v) => db ? kv("readwrite", (s) => s.put(v, k)) : Promise.resolve(mem.set(k, v));
+const kvDel = (k) => db ? kv("readwrite", (s) => s.delete(k)) : Promise.resolve(mem.delete(k));
 const allKeys = () => db ? kv("readonly", (s) => s.getAllKeys()) : Promise.resolve([...mem.keys()]);
 
 // ---------- state ----------
 const S = { settings: {}, favs: [], days: {}, steps: {}, meta: {}, draft: null, photos: new Map(),
-  posts: [], profile: {}, pdraft: null, templates: [], workouts: [], wdraft: null, talks: [], talkNotes: {}, talkAbout: "" };
+  posts: [], profile: {}, pdraft: null, templates: [], workouts: [], wdraft: null, talks: [], talkNotes: {}, talkAbout: "", moments: null };
 
 async function load() {
   S.settings = Object.assign({}, DEFAULTS, (await get("settings")) || {});
   S.favs = (await get("favs")) || [];
   S.steps = (await get("steps")) || {};
-  S.meta = Object.assign({ dirty: [], photoQueue: [], usage: {}, seeded: 0, restored: 0 }, (await get("meta")) || {});
+  S.meta = Object.assign({ dirty: [], photoQueue: [], audioQueue: [], remoteDeletes: [], usage: {}, seeded: 0, restored: 0 }, (await get("meta")) || {});
   for (const k of await allKeys()) if (String(k).startsWith("day:")) S.days[k.slice(4)] = await get(k);
   S.draft = (await get("draft")) || null;
   S.posts = (await get("posts")) || [];
@@ -381,6 +412,11 @@ async function load() {
   S.talkNotes = Object.assign({ text: "", sha: undefined, at: 0 }, (await get("talkNotes")) || {});
   S.talkAbout = (await get("talkAbout")) || "";   // "About you": phone-only like the talks, never synced or exported
   Object.assign(tdraft, (await get("tdraft")) || {});
+  // moments: the most private data here. On this phone only, unless momentsBackup is on; reflections never leave the phone either way.
+  S.moments = Object.assign({ waves: [], checkins: [], habits: [], wins: [], reflections: [], lists: null }, (await get("moments")) || {});
+  if (!S.moments.lists) S.moments.lists = defaultLists(0);
+  if (!Array.isArray(S.moments.lists.steps)) { S.moments.lists.steps = defaultSteps(); await put("moments", S.moments); }   // lists saved before the playbook was editable
+  fdraft = (await get("fdraft")) || null;   // a half-answered follow-up survives iOS closing the app
   if (!S.meta.liftSeeded) {
     // u: 0 so a phone that already edited these sessions wins the merge over a fresh install's copy
     const have = new Set(S.templates.map((t) => t.id));
@@ -413,6 +449,9 @@ function flushDrafts() {
   if (wdraftTimer) { clearTimeout(wdraftTimer); wdraftTimer = 0; put("wdraft", S.wdraft); }
   if (aboutTimer) { clearTimeout(aboutTimer); aboutTimer = 0; put("talkAbout", S.talkAbout); }
   if (tplTimer) { clearTimeout(tplTimer); tplTimer = 0; put("templates", S.templates); scheduleSync(2000); }
+  if (momTimer) saveMoments();
+  if (fdraftTimer) saveFdraft(true);
+  if (rec) stopRec();   // a voice note in progress is saved rather than lost
   put("tdraft", tdraft);
 }
 
@@ -599,16 +638,17 @@ async function estimate({ photo, text, previous, correction }) {
 // ---------- GitHub backup + steps ----------
 const syncOn = () => !!(S.settings.token || "").trim();
 const repo = () => (S.settings.repo || DEFAULT_REPO).trim();
-const b64encode = (s) => {
-  const bytes = new TextEncoder().encode(s);
+const b64bytes = (bytes) => {
   let bin = "";
   for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
   return btoa(bin);
 };
+const b64encode = (s) => b64bytes(new TextEncoder().encode(s));
 const b64decode = (b) => new TextDecoder().decode(Uint8Array.from(atob(b.replace(/\s/g, "")), (c) => c.charCodeAt(0)));
 async function gh(path, opts = {}) {
+  // opts.headers can override Accept (raw bytes for files over 1 MB, which the JSON answer leaves empty)
   const r = await fetch("https://api.github.com/repos/" + repo() + "/contents/" + path, Object.assign({ cache: "no-store" }, opts, {
-    headers: { Authorization: "Bearer " + S.settings.token.trim(), Accept: "application/vnd.github+json" },
+    headers: Object.assign({ Authorization: "Bearer " + S.settings.token.trim(), Accept: "application/vnd.github+json" }, opts.headers || {}),
   }));
   if (r.status === 401 || r.status === 403) throw new Error("GitHub refused the token. It needs read and write access to " + repo() + ".");
   return r;
@@ -654,6 +694,19 @@ async function ghList(path) {
   const list = await r.json();
   return Array.isArray(list) ? list : [];
 }
+// null when the file isn't there; anything else that isn't an answer throws, so a delete is retried rather than silently skipped
+async function ghSha(path) {
+  const r = await gh(path);
+  if (r.status === 404) return null;
+  if (!r.ok) throw new Error("GitHub said " + r.status);
+  return ((await r.json()) || {}).sha || null;
+}
+// a file that is already gone counts as deleted
+async function ghDelete(path, sha, message) {
+  const r = await gh(path, { method: "DELETE", body: JSON.stringify({ message: message || "remove", sha }) });
+  if (r.status === 404) return;
+  if (!r.ok) throw new Error("GitHub said " + r.status + " when deleting");
+}
 async function ghPhoto(id) {
   const r = await gh("photos/" + id + ".jpg");
   if (!r.ok) return null;
@@ -679,6 +732,15 @@ const mergeFavs = (r, l) => ({ favs: mergeById((r || {}).favs, (l || {}).favs) }
 const mergeGoals = (r, l) => newer(r, l);
 const mergeProgress = (r, l) => ({ profile: newer((r || {}).profile, (l || {}).profile), posts: mergeById((r || {}).posts, (l || {}).posts) });
 const mergeLift = (r, l) => ({ templates: mergeById((r || {}).templates, (l || {}).templates), workouts: mergeById((r || {}).workouts, (l || {}).workouts) });
+// After "Delete all" (momentsWipedAt), anything in the repo from before the wipe is something he deleted: it comes back as a tombstone, never as content.
+// Only when this phone's copy is on the table (l given), so syncFile sees the tombstones as new from here and writes them up for other phones too.
+function mergeMoments(r, l) {
+  const wiped = l ? S.meta.momentsWipedAt || 0 : 0;
+  const keep = (xs) => (xs || []).map((x) => (x && !x.del && (x.u || 0) < wiped ? { id: x.id, u: wiped, del: true } : x));
+  const R = r || {}, rl = R.lists && (R.lists.u || 0) < wiped ? null : R.lists;
+  return { waves: mergeById(keep(R.waves), (l || {}).waves), checkins: mergeById(keep(R.checkins), (l || {}).checkins),
+    habits: mergeById(keep(R.habits), (l || {}).habits), wins: mergeById(keep(R.wins), (l || {}).wins), lists: newer(rl, (l || {}).lists) };
+}
 // Merge one file with our copy and write it back when we add anything.
 async function syncFile(path, local, merge) {
   for (let attempt = 0; attempt < 3; attempt++) {
@@ -733,6 +795,26 @@ async function syncNow({ full = false } = {}) {
       await put("templates", S.templates);
       await put("workouts", S.workouts);
     }
+    // repo files he asked to have gone (Remove from backup, a deleted voice note, Delete all): retried until each one is, backup switch or not
+    if ((S.meta.remoteDeletes || []).length) await runRemoteDeletes();
+    // moments: only with his explicit say-so. Reflections never go up; voice notes only with the second switch.
+    if (S.settings.momentsBackup) {
+      const mo = await syncFile("moments.json", momentsForSync(), mergeMoments);
+      if (mo) {
+        // merged once more through mergeMoments (not mergeById) so a "Delete all" that ran while the file was in flight still wins
+        const M = S.moments, m2 = mergeMoments(mo, momentsForSync());
+        M.waves = m2.waves; M.checkins = m2.checkins; M.habits = m2.habits; M.wins = m2.wins;
+        M.lists = m2.lists || M.lists;
+        if (!Array.isArray(M.lists.steps)) M.lists.steps = defaultSteps();
+        await put("moments", M);
+        S.meta.momentsSynced = 1;
+      }
+      if (S.settings.momentsAudioBackup) for (const id of [...S.meta.audioQueue]) {
+        const blob = await get("audio:" + id);
+        if (blob) await ghPut("audio/" + id + "." + audioExt(blob), b64bytes(new Uint8Array(await blob.arrayBuffer())), undefined, "voice note");   // false = already there
+        S.meta.audioQueue = S.meta.audioQueue.filter((x) => x !== id);
+      }
+    }
     // days: everything changed here, plus the last two days in case another device logged something
     const dates = new Set([...S.meta.dirty, today(), shiftDay(today(), -1)]);
     if (full || !S.meta.restored) {
@@ -760,7 +842,7 @@ async function syncNow({ full = false } = {}) {
     setSyncStatus("Backed up " + new Date().toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }));
     // not the live logger or the session editor, and never while he's typing: a re-render would drop the keyboard
     const a = document.activeElement, typing = !!a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName) && view.contains(a);
-    if (["today", "history", "me", "lift"].includes(route().name) && !["go", "templates"].includes(route().args[0]) && !typing) render();
+    if (["today", "history", "me", "lift", "moments", "patterns"].includes(route().name) && !["go", "templates"].includes(route().args[0]) && !typing) render();
   } catch (e) {
     setSyncStatus("Backup failed: " + e.message, true);
   } finally {
@@ -805,14 +887,20 @@ let lastRoute = null;
 function render() {
   const r = route();
   const tab = { today: "today", day: "today", history: "history", add: "add", review: "add", edit: "today", favorites: "add", settings: "settings",
-    me: "me", post: "me", newpost: "me", compare: "me", lift: "today", talk: "me" }[r.name] || "today";
+    me: "me", post: "me", newpost: "me", compare: "me", lift: "today", talk: "me", wave: "today", moments: "me", patterns: "me" }[r.name] || "today";
   document.querySelectorAll("#tabs a").forEach((a) => a.classList.toggle("on", a.dataset.tab === tab));
   const fn = { today: viewDay, day: viewDay, add: viewAdd, review: viewReview, edit: viewReview, history: viewHistory, favorites: viewFavs, settings: viewSettings,
-    me: viewMe, post: viewPost, newpost: viewNewPost, compare: viewCompare, lift: viewLift, talk: viewTalk }[r.name] || viewDay;
+    me: viewMe, post: viewPost, newpost: viewNewPost, compare: viewCompare, lift: viewLift, talk: viewTalk, wave: viewWave, moments: viewMoments, patterns: viewPatterns }[r.name] || viewDay;
   const chat = r.name === "talk" && !!r.args[0];
   view.classList.toggle("talk", chat);
+  // leaving the wave being recorded stops the recorder (and the mic); the note is kept
+  if (rec && !(r.name === "wave" && (r.args[0] || (liveWave() || {}).id) === rec.waveId)) stopRec();
   view.innerHTML = fn(r);
   hydratePhotos();
+  hydrateAudio();
+  if (!(r.name === "wave" && !r.args[0])) pend = null;   // an untouched #/wave leaves nothing behind
+  if (!(r.name === "wave" && r.args[1] === "follow") && fdraft) { fdraft = null; saveFdraft(true); }
+  if (r.name !== "patterns") refl = null;
   if (chat) window.scrollTo(0, document.body.scrollHeight);
   // leaving a chat with unsaved replies: offer the notes once, without blocking
   const prev = lastRoute;
@@ -842,7 +930,9 @@ function viewDay(r) {
   const isToday = date === today();
   const entries = liveEntries(date);
   const stepPct = st ? Math.min(100, (st.n / s.stepsGoal) * 100) : 0;
+  // the wave button sits above everything: opening the app lands here, and iOS gives a home-screen web app no faster route in
   return `
+  <a class="btn block wavebtn" href="#/wave">🌊 Riding a wave</a>
   <div class="datebar">
     <button data-act="day" data-d="${shiftDay(date, -1)}" aria-label="Previous day">‹</button>
     <div class="title"><b>${h(niceDate(date))}</b><span class="dim small">${isToday ? new Date(date + "T12:00:00").toLocaleDateString("en-US", { month: "long", day: "numeric" }) : ""}</span></div>
@@ -863,7 +953,7 @@ function viewDay(r) {
     <div class="bar"><i style="width:${stepPct}%;background:var(--accent)"></i></div>
     <div id="stepsEdit"></div>
   </div>
-  ${isToday ? liftCard() + progressNudge() : ""}
+  ${isToday ? waveCards() + liftCard() + progressNudge() : ""}
   <div class="card">
     <div class="spread"><span><b>Food</b>${isToday && logStreak() >= 2 ? ` <span class="small ok">🔥 ${logStreak()} days in a row</span>` : ""}</span><a class="small" href="#/add/${date}">+ Add</a></div>
     ${entries.length ? entries.map((e) => `
@@ -1039,6 +1129,7 @@ function viewSettings() {
     <div class="row" style="margin-top:10px"><button class="btn" style="flex:1" data-act="sync">Back up now</button><button class="btn" style="flex:1" data-act="restore">Pull everything</button></div>
     <p class="small dim" style="margin:10px 0 0">Your log and photos are copied to the private repo, so a new phone gets everything back with "Pull everything". The same token lets the iPhone Shortcut send your steps.</p>
     <label class="check" style="margin-top:8px"><input type="checkbox" data-set="backupProgress" ${s.backupProgress !== false ? "checked" : ""}> Back up progress photos too (turn off to keep them on this phone only)</label>
+    <p class="small dim" style="margin:8px 0 0">Moments (waves, check-ins) are not backed up unless you turn that on in <a href="#/moments">Moments</a>.</p>
   </div>
 
   <h2>Steps from your iPhone</h2>
@@ -1142,7 +1233,8 @@ function viewMe() {
     </div>
   </div>
   <div id="profEdit"></div>
-  <a class="btn block" href="#/talk" style="margin-bottom:12px;justify-content:space-between"><span>💬 Talk</span><span class="dim small" style="font-weight:400">a private chat with Claude ›</span></a>
+  <a class="btn block" href="#/talk" style="margin-bottom:8px;justify-content:space-between"><span>💬 Talk</span><span class="dim small" style="font-weight:400">a private chat with Claude ›</span></a>
+  <a class="btn block" href="#/moments" style="margin-bottom:12px;justify-content:space-between"><span>🌊 Moments</span><span class="dim small" style="font-weight:400">waves, check-ins, patterns ›</span></a>
   <div class="card">
     <div class="spread small" style="margin-bottom:10px"><b>Consistency</b><span class="dim">last 12 weeks</span></div>
     ${heatmap()}
@@ -1460,7 +1552,8 @@ const money = (usd) => (usd >= 1 ? "$" + usd.toFixed(2) : usd < 0.005 ? "<1¢" :
 const talkTitle = (s) => { const w = s.trim().split(/\s+/); let t = w[0].slice(0, 40); for (const x of w.slice(1)) { if (t.length + 1 + x.length > 40) break; t += " " + x; } return t; };
 // the About text and the notes are frozen on the talk at its first message, so the system prompt (and its cache) stays byte-identical all conversation
 const talkSystem = (t) => TALK_SYSTEM + (t.about ? "\n\nAbout him (written by him):\n\n" + t.about : "")
-  + (t.notes ? "\n\nYour notes from past talks with him (from his PC and his phone):\n\n" + t.notes : "\n\nNo notes from past talks yet.");
+  + (t.notes ? "\n\nYour notes from past talks with him (from his PC and his phone):\n\n" + t.notes : "\n\nNo notes from past talks yet.")
+  + (t.moments ? "\n\nFrom his Moments log in the app (counts and the short labels he tapped; he chose to share this, there are no notes or recordings in it):\n\n" + t.moments : "");
 let live = null;        // the reply being streamed: { id, text, busy, err }
 let sending = false;    // between the Send tap and the stream starting, so a double tap can't send twice
 let wrapping = null;    // id of the talk whose notes are being written
@@ -1644,6 +1737,7 @@ function viewTalkList() {
   <div class="spread" style="margin:4px 0 10px"><a href="#/me" class="small">‹ Progress</a></div>
   <h1 style="margin-top:0">Talk</h1>
   <p class="small dim" style="margin-top:-6px">A private chat with Claude as a friend who's also a mentor. Think out loud about whatever's on your mind.</p>
+  <a class="btn block wavebtn" href="#/wave">🌊 Riding a wave</a>
   ${noKey ? `<div class="card small">Talk needs your Claude API key. <a href="#/settings">Add it in Settings</a>.</div>` : ""}
   <button class="btn primary block" data-act="newTalk" ${noKey ? "disabled" : ""}>New talk</button>
   <h2>Conversations</h2>
@@ -1663,7 +1757,7 @@ function viewTalkList() {
   </div>
   <h2>Privacy</h2>
   <div class="card small">
-    <p style="margin-top:0"><b>What goes to Claude</b> (Anthropic's API, with your key): every time you send a message, the whole conversation so far, your About text and your talk notes. Nothing else from the app: no food photos, no progress photos, no workouts.</p>
+    <p style="margin-top:0"><b>What goes to Claude</b> (Anthropic's API, with your key): every time you send a message, the whole conversation so far, your About text and your talk notes. Nothing else from the app: no food photos, no progress photos, no workouts. Moments: ${S.settings.talkMoments ? "a 14-day count summary, never your lines or recordings (you turned that on in Moments)" : "nothing, unless you turn on the count summary in Moments"}.</p>
     <p><b>Where things are stored.</b> Conversations and your About text stay on this phone only: not backed up, not in "Download everything", gone if you delete them or the app's storage. Notes: on this phone, and if backup is on, in your private plate-data repo as talk/notes.md, shared with /talk on your PC.</p>
     <label class="check"><input type="checkbox" data-set="writeNotes" ${S.settings.writeNotes !== false ? "checked" : ""}> Write notes after talks</label>
     <button class="btn block" style="margin-top:8px" data-act="clearNotes">Clear notes on this phone</button>
@@ -1698,8 +1792,704 @@ function viewChat(id) {
   </div>`;
 }
 
+// ---------- moments: waves, mood check-ins, self-data ----------
+// The most private data in the app. Phone-only unless he turns backup on; nothing here reaches Claude except the two opt-ins
+// (a weekly reflection he asks for, and a 14-day count summary for new talks), and those get counts and tapped labels, never his lines or audio.
+// These defaults are deliberately generic; he edits the lists on his phone.
+const MOMENT_LISTS = {
+  feelings: ["stressed", "scared", "worried", "low", "bored", "tired", "exhausted", "sad", "angry", "excited", "happy"],
+  triggers: ["bored", "late at night", "after a bad dream", "after an argument", "after work", "scrolling", "alone at home"],
+  habits: ["Share something you care about with someone", "Take one rest night, no guilt", "A win that isn't a number"],
+  // the playbook: editable on the phone like the other lists; the keys are what stored waves and the stats refer to, so they never change
+  steps: [["name", "Name it: this is a wave"], ["voice", "Record a quick voice note: what am I feeling?"], ["reach", "Reach out: text someone or open Talk"],
+    ["move", "Change your surroundings: another room, outside, music"], ["noshame", "Be kind to yourself whatever happens"]],
+};
+const defaultSteps = () => MOMENT_LISTS.steps.map(([key, label]) => ({ key, label }));
+const defaultLists = (u) => ({ feelings: MOMENT_LISTS.feelings.slice(), triggers: MOMENT_LISTS.triggers.slice(), habits: MOMENT_LISTS.habits.slice(), steps: defaultSteps(), u });
+const STEP_SHORT = { name: "naming it", voice: "a voice note", reach: "reaching out", move: "changing surroundings", noshame: "being kind to yourself" };
+const ENDED = { passed: "It passed", easing: "It's easing", still: "Still here", old: "It went the usual way" };   // "old" is the stored value; the words are neutral
+const ENDED_PAST = { passed: "passed", easing: "eased", still: "still there", old: "went the usual way" };
+const MINS_CHIPS = [[10, "10 min"], [20, "20 min"], [30, "30 min"], [60, "1 hr"], [120, "2 hr+"], [null, "not sure"]];
+const WAVE_LIVE_MS = 15 * 60e3;   // a wave this fresh with no follow-up is still being ridden: the button reopens it, the follow-up waits
+const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+
+const liveWaves = () => S.moments.waves.filter((w) => !w.del).sort((a, b) => a.at - b.at);
+const liveCheckins = () => S.moments.checkins.filter((c) => !c.del).sort((a, b) => a.at - b.at);
+const liveHabits = () => S.moments.habits.filter((x) => !x.del);
+const liveWins = () => S.moments.wins.filter((x) => !x.del);
+const momentsForSync = () => ({ waves: S.moments.waves, checkins: S.moments.checkins, habits: S.moments.habits, wins: S.moments.wins, lists: S.moments.lists });
+const waveDay = (at) => ymd(new Date(at - (+S.settings.dayStart || 0) * 3600e3));   // food day, so a 1 AM wave counts for the night he was up
+const weekOf = (date) => shiftDay(date, -((new Date(date + "T12:00:00").getDay() + 6) % 7));   // that week's Monday
+const eased = (w) => !!w.follow && (w.follow.ended === "passed" || w.follow.ended === "easing");
+// how long a wave lasted: what he said in the follow-up; failing that, when he answered, but only within 2 h (a next-day answer says nothing about the wave)
+const waveMins = (w) => { const f = w.follow; if (!f) return null; if (typeof f.mins === "number") return f.mins; const m = (f.at - w.at) / 60e3; return m <= 120 ? Math.max(1, Math.round(m)) : null; };
+const minsOf = (ws) => ws.map(waveMins).filter((m) => m != null);
+const median = (xs) => { if (!xs.length) return null; const s = xs.slice().sort((a, b) => a - b), m = s.length >> 1; return s.length % 2 ? s[m] : Math.round((s[m - 1] + s[m]) / 2); };
+const clockTime = (at) => new Date(at).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+const spanStr = (ms) => { const m = Math.max(0, Math.round(ms / 60e3)); return m < 60 ? m + " min" : m < 1440 ? Math.round(m / 60) + " h" : Math.round(m / 1440) + " d"; };
+const agoStr = (at) => spanStr(Date.now() - at) + " ago";
+// the late-night bucket ends where the food day starts (dayStart), so "late night" and "which day" agree
+const dayStartH = () => +S.settings.dayStart || 0;
+const lateLabel = () => "late night 12–" + dayStartH();
+const dayBucket = (at) => { const H = new Date(at).getHours(); return H < dayStartH() ? lateLabel() : H < 12 ? "morning" : H < 18 ? "afternoon" : "evening"; };
+const weekday = (at) => WEEKDAYS[(new Date(waveDay(at) + "T12:00:00").getDay() + 6) % 7];   // the food day's weekday, like everything else here
+const stepLabel = (k) => STEP_SHORT[k] || ((S.moments.lists.steps || []).find((s) => s.key === k) || {}).label || k;
+const stepKeys = (extra) => [...new Set((S.moments.lists.steps || []).map((s) => s.key).concat(extra || []))];   // the playbook, plus keys only old waves still carry
+const tally = (xs) => { const m = new Map(); for (const x of xs) m.set(x, (m.get(x) || 0) + 1); return [...m.entries()].sort((a, b) => b[1] - a[1]); };
+const tallyStr = (xs, n) => tally(xs).slice(0, n || 6).map(([k, c]) => k + " ×" + c).join(", ");
+const plural = (n, w) => n + " " + w + (n === 1 ? "" : "s");
+const allAudioIds = () => S.moments.waves.flatMap((w) => w.audio || []);
+const audioExt = (blob) => (/mp4|aac|m4a/.test(blob.type || "") ? "m4a" : "webm");
+
+let momTimer = 0;
+function saveMoments() {
+  clearTimeout(momTimer); momTimer = 0;
+  const p = put("moments", S.moments);
+  if (S.settings.momentsBackup) scheduleSync(2500);
+  return p;
+}
+function saveMomentsSoon() { clearTimeout(momTimer); momTimer = setTimeout(saveMoments, 400); }
+
+// #/wave makes the record the moment the screen opens (at = now) but keeps it out of the list until he touches something
+let pend = null;
+const findWave = (id) => S.moments.waves.find((w) => w.id === id && !w.del) || (pend && pend.id === id ? pend : null);
+const liveWave = () => liveWaves().filter((w) => !w.follow && Date.now() - w.at < WAVE_LIVE_MS).pop() || null;
+function waveFor(r) {
+  if (r.args[0]) return findWave(r.args[0]);
+  const live = liveWave();   // back within a few minutes: the same wave, not a new one
+  if (live) return live;
+  if (pend) { const inList = S.moments.waves.find((w) => w.id === pend.id); if (inList) pend = inList; return pend; }
+  pend = { id: uid(), at: Date.now(), feelings: [], intensity: null, triggers: [], text: "", audio: [], steps: [], follow: null, asked: false, dismissed: false, u: Date.now(), del: false };
+  return pend;
+}
+function touch(w) {
+  w.u = Date.now();
+  if (!S.moments.waves.some((x) => x.id === w.id)) S.moments.waves.push(w);
+}
+function waveHistory() {
+  const done = liveWaves().filter(eased), med = median(minsOf(done)), out = [];
+  if (done.length) out.push(`You've ridden out ${plural(done.length, "wave")}.`);
+  if (med) out.push(`Your waves usually ease in about ${med} min.`);
+  return out;
+}
+// 15+ minutes after a wave with no follow-up: ask once (on boot and when the app comes back), then a Today card waits
+function checkFollow() {
+  const r = route(), onToday = (r.name === "today" && !r.args[0]) || (r.name === "day" && r.args[0] === today());
+  if (rec || !onToday) return;   // only from Today, never mid-recording or out of another screen: the Today card catches it
+  const due = liveWaves().filter((w) => !w.follow && !w.asked && Date.now() - w.at >= WAVE_LIVE_MS);
+  if (!due.length) return;
+  for (const w of due) { w.asked = true; w.u = Date.now(); }
+  saveMoments();
+  go("#/wave/" + due[due.length - 1].id + "/follow");
+}
+
+function viewWave(r) {
+  const w = waveFor(r);
+  if (!w) return `<p class="dim">That wave is gone. <a href="#/moments">Back to Moments</a></p>`;
+  const sub = r.args[1];
+  if (sub === "follow") return followHtml(w);
+  if (sub === "ride" || w === pend || (!w.follow && Date.now() - w.at < WAVE_LIVE_MS)) return rideHtml(w);
+  return waveDetailHtml(w);
+}
+const audioRows = (w) => (w.audio || []).map((a) => `<div class="row" style="margin-top:8px"><audio controls preload="metadata" data-audio="${h(a)}" style="flex:1;height:40px"></audio>
+  <button class="x" data-act="dropAudio" data-id="${w.id}" data-a="${h(a)}" aria-label="Delete voice note">×</button></div>`).join("");
+// ten big buttons rather than a slider: on iOS a tap on a slider track doesn't move the thumb there
+const tenScale = (val, act, extra) => `<div class="scale ten" role="radiogroup" aria-label="1 to 10">${Array.from({ length: 10 }, (_, i) => i + 1).map((n) =>
+  `<button data-act="${act}" data-v="${n}" ${extra || ""} class="${val === n ? "on" : ""}" aria-label="${n} of 10" aria-pressed="${val === n}">${n}</button>`).join("")}</div>`;
+function rideHtml(w) {
+  const L = S.moments.lists, hist = waveHistory(), s = S.settings, recOn = !!(rec && rec.waveId === w.id);
+  const chips = (k, list) => `<div class="chips">${list.map((v) => `<button class="chip${w[k].includes(v) ? " on" : ""}" data-act="chip" data-id="${w.id}" data-k="${k}" data-v="${h(v)}">${h(v)}</button>`).join("")}</div>`;
+  const phone = (s.waveContactPhone || "").replace(/[^\d+]/g, "");
+  return `
+  <div class="spread"><a href="#/" class="small">‹ Today</a><a href="#/moments" class="small">Moments ›</a></div>
+  <div class="calm">
+    <h1>This is a wave.<br>It will pass.</h1>
+    <p class="dim">${hist.length ? h(hist.join(" ")) : "Naming it takes some of its weight. That's all this screen asks."}</p>
+  </div>
+  <div class="card">
+    <div class="small dim" style="margin-bottom:8px">What's here right now?</div>
+    ${chips("feelings", L.feelings)}
+  </div>
+  <div class="card">
+    <div class="spread" style="margin-bottom:8px"><span class="small dim">How strong?</span><b id="intVal" style="font-size:26px">${w.intensity == null ? "–" : w.intensity}</b></div>
+    ${tenScale(w.intensity, "intensity", `data-id="${w.id}"`)}
+    <div class="spread small dim" style="margin-top:6px"><span>1 · barely there</span><span>10 · as strong as it gets</span></div>
+  </div>
+  <div class="card">
+    <div class="small dim" style="margin-bottom:8px">What set it off? (if you know)</div>
+    ${chips("triggers", L.triggers)}
+    <input type="text" data-wave="text" data-id="${w.id}" value="${h(w.text)}" placeholder="One line, if you want" style="margin-top:12px">
+  </div>
+  <h2>Ride it out</h2>
+  <div class="card">
+    ${!L.steps.length ? `<p class="small dim" style="margin:0">No steps in your playbook. <a href="#/moments">Add some in Moments</a>.</p>` : ""}
+    ${L.steps.map(({ key: k, label }, i) => `<div class="pstep${w.steps.includes(k) ? " done" : ""}">
+      <button class="tick" data-act="step" data-id="${w.id}" data-k="${h(k)}" aria-label="Step ${i + 1} done">✓</button>
+      <div style="flex:1;min-width:0"><div><span class="dim">${i + 1}.</span> ${h(label)}</div>
+        ${k === "voice" ? `<div class="row" style="margin-top:8px"><button class="btn${recOn ? " recording" : ""}" data-act="rec" data-id="${w.id}">${recOn ? `■ Stop · <span id="recLeft">${recLeft()}</span>` : "🎙 Record"}</button><span class="small dim">${recOn ? "stops by itself at 2:00" : "stays on this phone, no transcript"}</span></div>
+          <div id="recMsg" class="small dim"></div>${audioRows(w)}` : ""}
+        ${k === "reach" ? `<div class="row" style="margin-top:8px;flex-wrap:wrap">${phone ? `<a class="btn" href="sms:${h(phone)}">Text ${h(s.waveContactName || "someone")}</a>` : `<a class="btn" href="#/moments">Set up someone to text</a>`}<a class="btn" href="#/talk/new">Open Talk</a></div>` : ""}
+      </div></div>`).join("")}
+  </div>
+  <a class="btn primary block" href="#/">Done for now</a>
+  <p class="small dim" style="text-align:center">Saved as you go, on this phone${s.momentsBackup ? " and in your private backup" : " only"}.</p>`;
+}
+function waveDetailHtml(w) {
+  const f = w.follow;
+  return `
+  <div class="spread" style="margin:4px 0 10px"><a href="#/moments" class="small">‹ Moments</a><span class="dim small">${h(longDate(waveDay(w.at)))} · ${h(clockTime(w.at))}</span></div>
+  <div class="card">
+    <div class="spread"><b style="font-size:18px">${w.intensity == null ? "A wave" : "Wave · " + w.intensity + "/10"}</b><span class="small dim">${h(dayBucket(w.at))}</span></div>
+    ${w.feelings.length ? `<p style="margin:8px 0 0">${h(w.feelings.join(", "))}</p>` : ""}
+    ${w.triggers.length ? `<p class="small dim" style="margin:4px 0 0">Set off by: ${h(w.triggers.join(", "))}</p>` : ""}
+    ${w.text ? `<p style="margin:8px 0 0;white-space:pre-wrap">${h(w.text)}</p>` : ""}
+    ${audioRows(w)}
+    <p class="small" style="margin:10px 0 0">${w.steps.length ? "Steps tried: " + h(w.steps.map(stepLabel).join(", ")) : "No steps ticked."}</p>
+  </div>
+  <div class="card">
+    ${f ? `<b>${h(ENDED[f.ended] || "Followed up")}</b> <span class="small dim">· ${waveMins(w) != null ? "about " + waveMins(w) + " min" : "answered " + spanStr(f.at - w.at) + " later"}${f.intensity != null ? ` · ${w.intensity == null ? "?" : w.intensity} → ${f.intensity}` : ""}</span>
+      ${f.ended === "old" ? `<p class="small dim" style="margin:6px 0 0">Noted, no shame. ${w.steps.length ? "You tried " + plural(w.steps.length, "step") + " first." : "Naming it is a step."}</p>` : ""}
+      ${(f.helped || []).length ? `<p class="small" style="margin:6px 0 0">Helped: ${h(f.helped.map(stepLabel).join(", "))}</p>` : ""}`
+    : `<b>No follow-up yet.</b><div class="small dim">Started ${h(agoStr(w.at))}.</div>`}
+    <a class="btn block" style="margin-top:10px" href="#/wave/${w.id}/follow">${f ? "Edit follow-up" : "How's it now?"}</a>
+  </div>
+  <div class="row"><a class="btn" style="flex:1" href="#/wave/${w.id}/ride">Edit</a><button class="btn danger" style="flex:1" data-act="deleteWave" data-id="${w.id}">Delete</button></div>`;
+}
+let fdraft = null, fdraftTimer = 0;   // the follow-up form: { id, intensity, ended, mins, helped, other }; kept in IndexedDB so a backgrounded app doesn't lose it
+function saveFdraft(now) {
+  clearTimeout(fdraftTimer); fdraftTimer = 0;
+  if (now) return put("fdraft", fdraft);
+  fdraftTimer = setTimeout(() => { fdraftTimer = 0; put("fdraft", fdraft); }, 300);
+}
+function followHtml(w) {
+  if (!fdraft || fdraft.id !== w.id) {
+    const f = w.follow || {}, keys = stepKeys(w.steps);
+    fdraft = { id: w.id, intensity: f.intensity ?? w.intensity ?? null, ended: f.ended || null, mins: f.mins, helped: (f.helped || []).filter((k) => keys.includes(k)), other: (f.helped || []).filter((k) => !keys.includes(k)).join(", ") };
+    saveFdraft();
+  }
+  const d = fdraft, n = w.steps.length;
+  return `
+  <div class="spread" style="margin:4px 0 10px"><a href="#/wave/${w.id}" class="small">‹ That wave</a><span class="dim small">${h(clockTime(w.at))} · ${h(agoStr(w.at))}</span></div>
+  <h1 style="margin-top:0">How's that wave now?</h1>
+  <div class="card">
+    <div class="spread" style="margin-bottom:8px"><span class="small dim">How strong is it now?</span><b id="intVal" style="font-size:26px">${d.intensity == null ? "–" : d.intensity}</b></div>
+    ${tenScale(d.intensity, "fInt")}
+    ${w.intensity != null ? `<div class="small dim" style="margin-top:6px">It was ${w.intensity} when you named it.</div>` : ""}
+  </div>
+  <div class="card">
+    <div class="small dim" style="margin-bottom:8px">How did it go?</div>
+    <div class="ends">${Object.entries(ENDED).map(([k, l]) => `<button class="${d.ended === k ? "on" : ""}" data-act="fEnd" data-v="${k}">${l}</button>`).join("")}</div>
+    ${d.ended === "old" ? `<p class="small" style="margin:10px 0 0">Noted, no shame. ${n ? "You tried " + plural(n, "step") + " first." : "Naming it is a step."}</p>`
+      : d.ended === "still" ? `<p class="small dim" style="margin:10px 0 0">Okay. It's allowed to take its time. You can come back and answer again later.</p>` : ""}
+  </div>
+  <div class="card">
+    <div class="small dim" style="margin-bottom:8px">About how long did it last?</div>
+    <div class="chips">${MINS_CHIPS.map(([m, l]) => `<button class="chip${d.mins !== undefined && d.mins === m ? " on" : ""}" data-act="fMins" data-v="${m == null ? "" : m}">${l}</button>`).join("")}</div>
+  </div>
+  <div class="card">
+    <div class="small dim" style="margin-bottom:8px">What helped, if anything?</div>
+    <div class="chips">${stepKeys(w.steps).map((k) => `<button class="chip${d.helped.includes(k) ? " on" : ""}" data-act="fHelp" data-k="${h(k)}">${h(stepLabel(k))}</button>`).join("")}</div>
+    <input type="text" data-fbind="other" value="${h(d.other)}" placeholder="Something else" style="margin-top:12px">
+  </div>
+  <button class="btn primary block" data-act="saveFollow" data-id="${w.id}" ${d.ended ? "" : "disabled"}>Save</button>`;
+}
+
+// Today: the follow-up card after 15 min, and a quick check-in card late at night
+function waveCards() {
+  let out = "";
+  const w = liveWaves().filter((x) => !x.follow && !x.dismissed && Date.now() - x.at >= WAVE_LIVE_MS).pop();
+  if (w) out += `<div class="card wavecard spread"><div><b>How's that wave now?</b><div class="small dim">${h(clockTime(w.at))} · ${h(agoStr(w.at))}</div></div>
+    <div class="row"><a class="btn" href="#/wave/${w.id}/follow">Answer</a><button class="x" data-act="dismissFollow" data-id="${w.id}" aria-label="Not now">×</button></div></div>`;
+  if (nightCheckinDue()) out += checkinCard(true);
+  return out;
+}
+const nightKey = () => today();   // one key per night: the food day, which rolls over at dayStart
+function nightCheckinDue() {
+  const H = new Date().getHours();
+  if (!(H >= 22 || H < dayStartH()) || S.meta.checkinDismissed === nightKey()) return false;
+  return !liveCheckins().some((c) => Date.now() - c.at < 6 * 3600e3);
+}
+let ci = { feelings: [] }, ciDone = 0;
+function checkinCard(night) {
+  const L = S.moments.lists;
+  return `<div class="card${night ? " wavecard" : ""}" id="checkin">
+    <div class="spread"><b>${night ? "Quick check-in before bed" : "Quick check-in"}</b>${night ? `<button class="x" data-act="dismissCheckin" aria-label="Not tonight">×</button>` : `<span class="small dim">under ten seconds</span>`}</div>
+    ${Date.now() - ciDone < 4000 ? `<p class="ok" style="margin:8px 0 0">Noted ✓</p>` : `
+    <div class="chips" style="margin-top:8px">${L.feelings.map((v) => `<button class="chip${ci.feelings.includes(v) ? " on" : ""}" data-act="ciChip" data-v="${h(v)}">${h(v)}</button>`).join("")}</div>
+    <div class="small dim" style="margin:12px 0 6px">Overall, right now? Tapping a number saves it.</div>
+    <div class="scale">${[1, 2, 3, 4, 5].map((n) => `<button data-act="ciSave" data-v="${n}" aria-label="${n} of 5">${["😣", "😕", "😐", "🙂", "😄"][n - 1]}<span>${n}</span></button>`).join("")}</div>`}
+  </div>`;
+}
+
+function viewMoments() {
+  const ws = liveWaves().slice().reverse().slice(0, 8), L = S.moments.lists, s = S.settings, week = weekOf(today());
+  const ticks = liveHabits().filter((t) => t.week === week), win = liveWins().find((x) => x.date === today());
+  const any = liveWaves().length || liveCheckins().length || liveHabits().length || liveWins().length;
+  const listEd = (k, label, hint) => `<div class="card"><div class="small dim" style="margin-bottom:8px">${label}</div>
+    <div class="chips">${L[k].map((v) => `<span class="chip"><span>${h(v)}</span><button data-act="dropList" data-l="${k}" data-v="${h(v)}" aria-label="Remove ${h(v)}">×</button></span>`).join("")}</div>
+    <div class="row" style="margin-top:10px"><input type="text" data-ladd="${k}" placeholder="${hint}" autocapitalize="none"><button class="btn" data-act="addList" data-l="${k}">Add</button></div></div>`;
+  // the playbook: one row per step (they're sentences, not chips); the key behind each one is what stored waves point at
+  const stepsEd = `<div class="card"><div class="small dim" style="margin-bottom:4px">Playbook (the steps on the wave screen, in this order)</div>
+    ${L.steps.map((st, i) => `<div class="spread" style="padding:8px 0;border-top:1px solid var(--line);gap:10px"><span style="min-width:0"><span class="dim">${i + 1}.</span> ${h(st.label)}</span><button class="x" data-act="dropStep" data-k="${h(st.key)}" aria-label="Remove step ${i + 1}">×</button></div>`).join("")}
+    <div class="row" style="margin-top:10px"><input type="text" data-ladd="steps" placeholder="Add a step" autocapitalize="sentences"><button class="btn" data-act="addList" data-l="steps">Add</button></div>
+    <p class="small dim" style="margin:8px 0 0">The voice recorder stays with the voice-note step and the Text / Open Talk buttons with the reach-out step.</p></div>`;
+  const pendingDel = (S.meta.remoteDeletes || []).length && syncOn();
+  return `
+  <div class="spread" style="margin:4px 0 10px"><a href="#/me" class="small">‹ Progress</a><a href="#/patterns" class="small">Patterns ›</a></div>
+  <h1 style="margin-top:0">Moments</h1>
+  <p class="small dim" style="margin-top:-6px">Waves, quick check-ins, and the small things that help. Private by default.</p>
+  <a class="btn block wavebtn" href="#/wave">🌊 Riding a wave</a>
+  ${checkinCard(false)}
+  <h2>Recent waves</h2>
+  <div class="card">${ws.length ? ws.map((w) => `<a class="wrow" href="#/wave/${w.id}"><span class="dim">${h(shortMD(waveDay(w.at)))}</span>
+      <span style="min-width:0"><b>${h(w.feelings.join(", ") || "a wave")}</b><div class="small dim">${h(clockTime(w.at))}${w.intensity != null ? " · " + w.intensity + "/10" : ""}</div></span>
+      <span class="dim small">${w.follow ? h(ENDED_PAST[w.follow.ended] || "") + (eased(w) && waveMins(w) != null ? " · " + waveMins(w) + " min" : "") : "no follow-up"}</span></a>`).join("")
+    : `<p class="dim small" style="margin:0">None logged. When one hits, the blue button is the fastest way to name it.</p>`}</div>
+  ${liveWaves().length ? `<a class="btn block" href="#/patterns">📈 Patterns · what your waves look like</a>` : ""}
+  <h2>This week</h2>
+  <div class="card">
+    ${L.habits.map((name) => { const k = slug(name); return `<label class="check"><input type="checkbox" data-act="habit" data-k="${h(k)}" ${ticks.some((t) => t.key === k) ? "checked" : ""}> ${h(name)}</label>`; }).join("")}
+    <label class="field" style="margin:10px 0 0"><span>Today's win (not a number)</span><input type="text" id="winIn" value="${h(win ? win.text : "")}" placeholder="One small thing that went right"></label>
+    <p class="small dim" style="margin:6px 0 0">Week of ${h(shortMD(week))} · ${plural(ticks.length, "tick")} · ${plural(liveWins().filter((x) => weekOf(x.date) === week).length, "win")} written down.</p>
+  </div>
+  <h2>Your words</h2>
+  ${listEd("feelings", "Feelings (chips on the wave and check-in screens)", "Add a feeling")}
+  ${listEd("triggers", "Triggers", "Add a trigger")}
+  ${listEd("habits", "Weekly habits", "Add a habit")}
+  ${stepsEd}
+  <h2>Someone to text</h2>
+  <div class="card">
+    <div class="grid2"><label class="field"><span>Name</span><input type="text" data-set="waveContactName" value="${h(s.waveContactName || "")}" placeholder="a friend"></label>
+      <label class="field"><span>Phone</span><input type="tel" data-set="waveContactPhone" value="${h(s.waveContactPhone || "")}" placeholder="+1 555 0100"></label></div>
+    <p class="small dim" style="margin:0">Shows as a "Text …" button while you're riding a wave. Stays on this phone, never backed up.</p>
+  </div>
+  <h2>Privacy</h2>
+  <div class="card small">
+    <p style="margin-top:0"><b>Where this lives.</b> Everything on this screen stays on this phone unless you turn on backup below. Voice notes are audio files on the phone; nothing is transcribed. Moments are in "Download everything" (without audio) only when backup is on.</p>
+    <p><b>What goes to Claude.</b> Nothing, except two things you choose: the weekly reflection on Patterns (counts only, when you ask for it), and, if the switch below is on, a 14-day count summary at the start of a new talk. Never the lines you type, never the recordings.</p>
+    <label class="check"><input type="checkbox" data-set="momentsBackup" ${s.momentsBackup ? "checked" : ""}> Back up Moments to your private repo as moments.json</label>
+    <label class="check"><input type="checkbox" data-set="momentsAudioBackup" ${s.momentsAudioBackup && s.momentsBackup ? "checked" : ""} ${s.momentsBackup ? "" : "disabled"}> Back up voice notes too, as audio/&lt;id&gt;</label>
+    <label class="check"><input type="checkbox" data-set="talkMoments" ${s.talkMoments ? "checked" : ""}> Give new talks a 14-day count summary (feelings, triggers, times of day, how waves ended)</label>
+    ${!s.momentsBackup && S.meta.momentsSynced && syncOn() ? `<button class="btn block" style="margin-top:8px" data-act="removeMomentsBackup">Remove Moments from backup</button>` : ""}
+    ${any ? `<button class="btn danger block" style="margin-top:8px" data-act="deleteMoments">Delete all moments</button>` : ""}
+    ${pendingDel ? `<p class="error" style="margin:8px 0 0">Some files couldn't be removed from the backup yet; will retry on the next backup.</p>` : ""}
+    <p class="dim" style="margin:10px 0 0"><b>Removing isn't the whole story.</b> "Remove" and "Delete all" delete the current files from ${h(repo())}, but GitHub keeps older versions in that repo's git history. Deleting and re-creating that private repo on GitHub clears them completely. Delete all also puts these lists back to their defaults and clears the contact.</p>
+  </div>`;
+}
+
+function bars(vals, labels) {
+  const W = 320, H = 92, P = 4, n = vals.length, max = Math.max(1, ...vals), bw = (W - P * 2) / n;
+  return `<svg class="chart bars" viewBox="0 0 ${W} ${H}" role="img" aria-label="Waves per week">${vals.map((v, i) => {
+    const hgt = v ? Math.max(3, (v / max) * (H - 30)) : 2, x = P + i * bw + 3, mid = x + (bw - 6) / 2;
+    return `<rect x="${x.toFixed(1)}" y="${(H - 16 - hgt).toFixed(1)}" width="${(bw - 6).toFixed(1)}" height="${hgt.toFixed(1)}" rx="3" fill="var(--protein)" opacity="${v ? 1 : 0.25}"/>
+      <text x="${mid.toFixed(1)}" y="${(H - 20 - hgt).toFixed(1)}" text-anchor="middle" font-size="11" fill="var(--text)">${v || ""}</text>
+      <text x="${mid.toFixed(1)}" y="${H - 4}" text-anchor="middle" font-size="9" fill="var(--dim)">${h(labels[i])}</text>`; }).join("")}</svg>`;
+}
+function viewPatterns() {
+  const ws = liveWaves(), cs = liveCheckins(), t0 = today(), noKey = !(S.settings.apiKey || "").trim();
+  const back = `<div class="spread" style="margin:4px 0 10px"><a href="#/moments" class="small">‹ Moments</a></div><h1 style="margin-top:0">Patterns</h1>`;
+  if (!ws.length && !cs.length) return back + `<div class="card"><p style="margin-top:0">Nothing to read yet, and that's fine.</p>
+    <p class="small dim" style="margin:0">Once you've named a few waves and done a few check-ins, this screen shows when they tend to hit, what sets them off, which steps help, and how long they usually last. Every one you log is a data point about yourself.</p></div>` + reflectionCard(noKey);
+  const followed = ws.filter((w) => w.follow), done = ws.filter(eased), old = followed.filter((w) => w.follow.ended === "old").length;
+  const stepsTried = ws.reduce((a, w) => a + w.steps.length, 0);
+  const thisMon = weekOf(t0), weeks = Array.from({ length: 8 }, (_, i) => shiftDay(thisMon, -7 * (7 - i)));
+  const perWeek = weeks.map((m) => ws.filter((w) => weekOf(waveDay(w.at)) === m).length);
+  const buckets = ["morning", "afternoon", "evening"].concat(dayStartH() ? [lateLabel()] : []).map((b) => [b, ws.filter((w) => dayBucket(w.at) === b).length]);
+  const days = tally(ws.map((w) => weekday(w.at))), trig = tally(ws.flatMap((w) => w.triggers));
+  const stepRows = stepKeys(ws.flatMap((w) => w.steps)).map((k) => { const tried = ws.filter((w) => w.steps.includes(k)), ok = tried.filter(eased);
+    return { k, n: tried.length, ok: ok.length, med: median(minsOf(ok)), said: followed.filter((w) => (w.follow.helped || []).includes(k)).length }; }).filter((r) => r.n);
+  const mins = minsOf(done).sort((a, b) => a - b), med = median(mins), q = (p) => mins[Math.min(mins.length - 1, Math.floor(p * (mins.length - 1)))];
+  const mo = t0.slice(0, 7), lastMo = shiftDay(t0.slice(0, 8) + "01", -15).slice(0, 7);   // food-day months
+  const feel = (m) => new Map(tally(ws.concat(cs).filter((x) => waveDay(x.at).slice(0, 7) === m).flatMap((x) => x.feelings)));
+  const fNow = feel(mo), fLast = feel(lastMo);
+  const words = [...new Set([...fNow.keys(), ...fLast.keys()])].sort((a, b) => ((fNow.get(b) || 0) + (fLast.get(b) || 0)) - ((fNow.get(a) || 0) + (fLast.get(a) || 0))).slice(0, 8);
+  const mood = weeks.map((m) => { const xs = cs.filter((c) => weekOf(waveDay(c.at)) === m); return xs.length ? { n: xs.length, avg: xs.reduce((a, c) => a + c.overall, 0) / xs.length } : null; });
+  // next to the rest of Plate: waves a day on days with and without a workout, food logged, steps at goal. Today is still being lived, so it's left out.
+  const last = shiftDay(t0, -1), first = ws.length ? waveDay(ws[0].at) : last, span = Math.min(56, Math.max(7, daysBetween(first, last) + 1));
+  const dayList = Array.from({ length: span }, (_, i) => shiftDay(last, -i)), perDay = Object.fromEntries(dayList.map((d) => [d, 0]));
+  for (const w of ws) { const d = waveDay(w.at); if (d in perDay) perDay[d]++; }
+  const lifted = new Set(liveWorkouts().map((w) => w.date));
+  const split = (f) => { const a = dayList.filter(f), b = dayList.filter((d) => !f(d)), rate = (xs) => (xs.length ? xs.reduce((s, d) => s + perDay[d], 0) / xs.length : null); return { a: rate(a), na: a.length, b: rate(b), nb: b.length }; };
+  const rows = [["a workout", split((d) => lifted.has(d))], ["food logged", split(loggedDay)], ["steps at goal", split((d) => { const s = stepsFor(d); return !!s && s.n >= S.settings.stepsGoal; })]];
+  const rate = (x) => (x == null ? "—" : x.toFixed(1));
+  const line = (a, b) => `<div class="spread" style="gap:16px"><span>${a}</span><span>${b}</span></div>`;
+  return back + `
+  <p class="small dim" style="margin-top:-6px">Your own numbers in plain words. This is about showing up, not scoring.</p>
+  <div class="card"><b>Showing up</b>
+    <p style="margin:6px 0 0">You've named ${plural(ws.length, "wave")}, followed up on ${followed.length} and ridden out ${done.length}. ${plural(stepsTried, "step")} tried along the way${cs.length ? `, and ${plural(cs.length, "check-in")}` : ""}.</p>
+    ${old ? `<p class="small dim" style="margin:6px 0 0">${plural(old, "wave")} went the usual way. Each one was still named and noted, which is the part that builds this record.</p>` : ""}</div>
+  <div class="card"><div class="spread small" style="margin-bottom:6px"><b>Waves per week</b><span class="dim">last 8 weeks</span></div>${bars(perWeek, weeks.map((m) => shortMD(m)))}</div>
+  <div class="card"><b>When they hit</b>
+    <div class="small" style="margin-top:6px">${buckets.map(([b, n]) => line(h(b), n ? plural(n, "wave") : `<span class="dim">none</span>`)).join("")}</div>
+    ${days.length ? `<p class="small dim" style="margin:8px 0 0">Most often on ${h(days.slice(0, 2).map(([d, n]) => d + " (" + n + ")").join(" and "))}.</p>` : ""}</div>
+  <div class="card"><b>What set them off</b>${trig.length ? `<div class="small" style="margin-top:6px">${trig.slice(0, 6).map(([t, n]) => line(h(t), n + "×")).join("")}</div>`
+    : `<p class="small dim" style="margin:6px 0 0">No triggers tagged yet. They're optional; tag them when you can and this fills in.</p>`}</div>
+  <div class="card"><b>What helped</b>${stepRows.length ? `<div class="small" style="margin-top:6px">${stepRows.map((r) => `<div style="padding:4px 0">${h(stepLabel(r.k))} · tried ${r.n}× · eased ${r.ok} of ${r.n}${r.med ? " · about " + r.med + " min" : ""}${r.said ? " · you said it helped " + r.said + "×" : ""}</div>`).join("")}</div>`
+    : `<p class="small dim" style="margin:6px 0 0">No steps ticked yet. Ticking them while you ride a wave is how this card learns what works for you.</p>`}</div>
+  <div class="card"><b>How long they last</b>${med ? `<p style="margin:6px 0 0">Half of your eased waves were done within <b>${med} min</b>. ${q(0.25) === q(0.75) ? "Most land around " + q(0.25) + " min" : "The typical range is " + q(0.25) + "–" + q(0.75) + " min"}, from ${plural(mins.length, "wave")} with a time.</p><p class="small dim" style="margin:6px 0 0">That's the number to hold onto when one hits: it has an end.</p>`
+    : `<p class="small dim" style="margin:6px 0 0">No eased waves with a time yet. The "how long did it last" answer in the follow-up is where this card gets its numbers.</p>`}</div>
+  <div class="card"><b>Words for feelings</b>${words.length ? `<div class="small" style="margin-top:6px">${words.map((w) => line(h(w), `${fNow.get(w) || 0}× <span class="dim">this month · ${fLast.get(w) || 0}× last</span>`)).join("")}</div>
+    <p class="small dim" style="margin:8px 0 0">${fNow.size} different word${fNow.size === 1 ? "" : "s"} this month, ${fLast.size} last month.</p>` : `<p class="small dim" style="margin:6px 0 0">No feelings named in the last two months.</p>`}</div>
+  <div class="card"><b>Mood check-ins</b>${mood.some(Boolean) ? `<div class="small" style="margin-top:6px">${weeks.map((m, i) => (mood[i] ? line("Week of " + h(shortMD(m)), `${mood[i].avg.toFixed(1)} / 5 <span class="dim">· ${mood[i].n}</span>`) : "")).join("")}</div>`
+    : `<p class="small dim" style="margin:6px 0 0">No check-ins in the last 8 weeks. The quick check-in takes ten seconds.</p>`}</div>
+  <div class="card"><b>Next to the rest of Plate</b>
+    <div class="small" style="margin-top:6px">${rows.map(([label, r]) => line("Days with " + label, `${rate(r.a)} <span class="dim">(${r.na} d)</span> · without ${rate(r.b)} <span class="dim">(${r.nb} d)</span>`)).join("")}</div>
+    <p class="small dim" style="margin:8px 0 0">Waves a day over the last ${span} days, not counting today. Sleep isn't tracked in Plate, so nothing here pretends to know about it.</p></div>
+  ${reflectionCard(noKey)}`;
+}
+
+// what the opt-ins send: counts and tapped labels only. Never w.text, never follow "other" text, never audio.
+function momentsSummary(days, withHabits) {
+  const since = Date.now() - days * 864e5;
+  const ws = liveWaves().filter((w) => w.at >= since), cs = liveCheckins().filter((c) => c.at >= since);
+  const out = [`Moments in Plate, last ${days} days (counts and tapped labels only):`];
+  if (!ws.length) out.push("- Waves: none logged.");
+  else {
+    const f = ws.filter((w) => w.follow), by = (k) => f.filter((w) => w.follow.ended === k).length, med = median(minsOf(ws.filter(eased)));
+    out.push(`- Waves: ${ws.length} (${by("passed")} passed, ${by("easing")} easing, ${by("still")} still there at follow-up, ${by("old")} went the usual way, ${ws.length - f.length} without a follow-up)${med ? `; the ones that eased took about ${med} min` : ""}.`);
+    const ints = ws.filter((w) => w.intensity != null).map((w) => w.intensity);
+    if (ints.length) out.push(`- Intensity: average ${(ints.reduce((a, b) => a + b, 0) / ints.length).toFixed(1)} of 10.`);
+    const feelings = tallyStr(ws.flatMap((w) => w.feelings)), trig = tallyStr(ws.flatMap((w) => w.triggers));
+    if (feelings) out.push("- Feelings named: " + feelings + ".");
+    if (trig) out.push("- Triggers tapped: " + trig + ".");
+    out.push(`- When: ${tallyStr(ws.map((w) => dayBucket(w.at)))}. Weekdays: ${tallyStr(ws.map((w) => weekday(w.at)), 7)}.`);
+    out.push("- Playbook steps tried: " + (tallyStr(ws.flatMap((w) => w.steps.map(stepLabel))) || "none ticked") + ".");
+    const keys = stepKeys(ws.flatMap((w) => w.steps)), helped = tallyStr(f.flatMap((w) => (w.follow.helped || []).filter((k) => keys.includes(k)).map(stepLabel)));   // typed "other" text stays out
+    if (helped) out.push("- Said it helped: " + helped + ".");
+  }
+  const cf = tallyStr(cs.flatMap((c) => c.feelings));
+  out.push(cs.length ? `- Mood check-ins: ${cs.length}, average ${(cs.reduce((a, c) => a + c.overall, 0) / cs.length).toFixed(1)} of 5${cf ? "; feelings: " + cf : ""}.` : "- Mood check-ins: none.");
+  if (withHabits) {
+    const week = weekOf(today()), ticks = liveHabits().filter((t) => t.week === week), names = S.moments.lists.habits;
+    out.push(`- Weekly habits ticked this week: ${ticks.length} of ${names.length}${ticks.length ? " (" + ticks.map((t) => names.find((n) => slug(n) === t.key) || t.key).join(", ") + ")" : ""}.`);
+    out.push(`- Wins written down: ${liveWins().filter((x) => x.date >= shiftDay(today(), -(days - 1))).length} in the last ${days} days.`);
+  }
+  return out.join("\n");
+}
+let refl = null;   // the reflection card on Patterns: { open, busy, text, usd, err }
+const reflectionPrompt = () => "This is a weekly read-back, not a chat. Below are counts from my Moments log in Plate for the last 7 days: only numbers and the short labels I tap, no notes and no recordings. "
+  + "Give me a short, kind read-back of my week in a few short paragraphs. Notice what the numbers say about showing up (waves named, ridden out, steps tried), not perfection. End with one small thing to try next week. Plain sentences, no headers or lists.\n\n"
+  + momentsSummary(7, true);
+function reflectionCard(noKey) {
+  const r = refl || {}, past = S.moments.reflections.slice().sort((a, b) => b.at - a.at);
+  return `<div class="card">
+    <div class="spread"><b>Weekly reflection</b><span class="small dim">by Claude, counts only</span></div>
+    <p class="small dim" style="margin:6px 0 10px">Claude gets the week's numbers and labels (shown before anything is sent), plus your About text and talk notes like a talk would. Nothing you typed or recorded. A few cents.</p>
+    ${noKey ? `<p class="small" style="margin:0">Needs your Claude API key. <a href="#/settings">Add it in Settings</a>.</p>` : r.open ? `
+      <details><summary class="small">What will be sent</summary><pre class="notes" style="margin-top:8px">${h(reflectionPrompt())}</pre></details>
+      <button class="btn primary block" style="margin-top:10px" data-act="askReflection" ${r.busy ? "disabled" : ""}>${r.busy ? "Reading your week…" : "Ask Claude"}</button>
+      ${r.err ? `<p class="small error" style="margin:8px 0 0">${h(r.err)}</p>` : ""}
+      ${r.text ? `<div class="msg a" style="max-width:none;margin-top:10px">${h(r.text)}</div><div class="small dim" style="margin-top:6px">≈ ${money(r.usd)} · kept on this phone only</div>` : ""}`
+    : `<button class="btn block" data-act="openReflection">Weekly reflection</button>`}
+    ${past.length ? `<details style="margin-top:10px"><summary class="small dim">Past reflections (${past.length}, on this phone only)</summary>${past.map((x) => `<div style="margin-top:10px"><div class="small dim">${h(shortMD(ymd(new Date(x.at))))} · week of ${h(shortMD(x.week))} · ≈ ${money(x.usd)}</div><div class="msg a" style="max-width:none">${h(x.text)}</div></div>`).join("")}</details>` : ""}
+  </div>`;
+}
+async function askReflection() {
+  if (!refl || refl.busy) return;
+  refl.busy = true; refl.err = null;
+  render();
+  try {
+    const client = await claude();
+    await pullNotes();
+    const system = talkSystem({ about: (S.talkAbout || "").trim(), notes: S.talkNotes.text || "", moments: "" });
+    let res;
+    try {
+      res = await client.beta.messages.create({ model: MODEL, max_tokens: 4000, betas: ["server-side-fallback-2026-07-01"], fallbacks: "default",
+        output_config: { effort: "medium" }, system, messages: [{ role: "user", content: reflectionPrompt() }] });
+    } catch (e) { throw claudeError(e); }
+    const usd = countUsage(res.usage);
+    if (res.stop_reason === "refusal") throw new Error(REFUSAL_LINE);
+    const text = textOf(res).trim();
+    if (!text) throw new Error("Claude sent back nothing. Try again.");
+    S.moments.reflections.push({ id: uid(), week: weekOf(today()), text, usd, at: Date.now() });
+    await saveMoments();
+    Object.assign(refl, { text, usd });
+  } catch (e) { refl.err = e.message; }
+  finally { refl.busy = false; if (route().name === "patterns") render(); }
+}
+
+// voice notes: MediaRecorder, blob in IndexedDB under audio:<id>, played back from an object URL. No transcription.
+let rec = null;   // { mr, stream, waveId, start, chunks, mime, timer }
+const audioURLs = new Map();
+const recLeft = () => { const left = rec ? Math.max(0, 120 - Math.floor((Date.now() - rec.start) / 1000)) : 120; return Math.floor(left / 60) + ":" + pad(left % 60); };
+async function startRec(w) {
+  if (rec) return stopRec();
+  const msg = (t) => { const el = $("recMsg"); if (el) el.textContent = t; };
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || typeof MediaRecorder === "undefined") return msg("This browser can't record here. Keep going; the other steps still count.");
+  let stream;
+  try { stream = await navigator.mediaDevices.getUserMedia({ audio: true }); }
+  catch { return msg("Couldn't reach the microphone. That's okay: say it out loud anyway, or type a line above."); }
+  const mime = MediaRecorder.isTypeSupported("audio/mp4") ? "audio/mp4" : "audio/webm";
+  let mr;
+  try { mr = new MediaRecorder(stream, { mimeType: mime }); }
+  catch { try { mr = new MediaRecorder(stream); } catch { stream.getTracks().forEach((t) => t.stop()); return msg("Couldn't start recording. Keep going."); } }
+  const R = (rec = { mr, stream, waveId: w.id, start: Date.now(), chunks: [], mime: mr.mimeType || mime, timer: 0 });
+  touch(w);   // recording is a touch: an untouched wave becomes real now, so the note has somewhere to land
+  saveMoments();
+  mr.ondataavailable = (e) => { if (e.data && e.data.size) R.chunks.push(e.data); };
+  mr.onstop = async () => {
+    stream.getTracks().forEach((t) => t.stop());
+    clearInterval(R.timer);
+    if (rec === R) rec = null;
+    // by id in the stored list, not pend: he may have left the screen (or deleted the wave) while this was recording
+    const blob = new Blob(R.chunks, { type: R.mime }), wv = S.moments.waves.find((x) => x.id === R.waveId && !x.del);
+    if (!wv) toast("That wave is gone, so the voice note wasn't kept.");
+    else if (!blob.size) toast("That was too short to keep.");
+    else {
+      const id = uid();
+      await put("audio:" + id, blob);
+      wv.audio = (wv.audio || []).concat(id);
+      if (!wv.steps.includes("voice")) wv.steps.push("voice");   // recording one is the step
+      touch(wv);
+      if (S.settings.momentsBackup && S.settings.momentsAudioBackup) { S.meta.audioQueue.push(id); await saveMeta(); }
+      await saveMoments();
+    }
+    // redraw only the screen this belongs to, and not under his thumb
+    const r = route(), a = document.activeElement, typing = !!a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName) && view.contains(a);
+    if (r.name === "wave" && (r.args[0] || (liveWave() || {}).id) === R.waveId && !typing) render();
+  };
+  mr.start();
+  R.timer = setInterval(() => { const el = $("recLeft"); if (el) el.textContent = recLeft(); if (Date.now() - R.start >= 120e3) stopRec(); }, 250);
+  render();
+}
+function stopRec() {
+  if (!rec) return;
+  if (rec.mr.state !== "inactive") rec.mr.stop();   // onstop saves the note and releases the mic
+  else { rec.stream.getTracks().forEach((t) => t.stop()); clearInterval(rec.timer); rec = null; }
+}
+async function audioURL(id) {
+  if (audioURLs.has(id)) return audioURLs.get(id);
+  let b = await get("audio:" + id);
+  // a new phone with both switches on can pull a note back from the repo: raw bytes, since the JSON answer leaves `content` empty past 1 MB.
+  // Nothing is cached unless real bytes came back, so a failed pull is simply tried again next time.
+  if (!b && syncOn() && S.settings.momentsBackup && S.settings.momentsAudioBackup) {
+    for (const ext of ["m4a", "webm"]) {
+      try {
+        const r = await gh("audio/" + id + "." + ext, { headers: { Accept: "application/vnd.github.raw" } });
+        if (r.status === 404) continue;
+        if (!r.ok) break;
+        const buf = await r.arrayBuffer();
+        if (!buf.byteLength) break;
+        b = new Blob([buf], { type: ext === "m4a" ? "audio/mp4" : "audio/webm" });
+        await put("audio:" + id, b);
+        break;
+      } catch { break; /* offline: the player just stays empty this time */ }
+    }
+  }
+  if (!b) return null;
+  const u = URL.createObjectURL(b);
+  audioURLs.set(id, u);
+  return u;
+}
+function hydrateAudio() {
+  view.querySelectorAll("audio[data-audio]").forEach(async (el) => {
+    const u = await audioURL(el.dataset.audio);
+    if (u) el.src = u;
+    else el.replaceWith(Object.assign(document.createElement("span"), { className: "small dim", textContent: "voice note not on this phone" }));
+  });
+}
+async function dropAudioLocal(id) {
+  await kvDel("audio:" + id);
+  const u = audioURLs.get(id);
+  if (u) { URL.revokeObjectURL(u); audioURLs.delete(id); }
+  S.meta.audioQueue = S.meta.audioQueue.filter((x) => x !== id);
+  await saveMeta();
+}
+// Files to delete from the repo: "moments.json", "audio/<id>" (that note, whatever its extension) or "audio/*" (every note).
+// The queue lives in meta and syncNow retries it until the repo confirms, backup switch or not: a delete he asked for isn't allowed to fail quietly.
+// queue whenever the repo may hold a copy, token or no token: without one the queue simply waits for the next backup that has one
+const repoMayHaveMoments = () => !!(S.meta.momentsSynced || S.settings.momentsBackup);
+async function queueRemoteDeletes(paths) {
+  S.meta.remoteDeletes = [...new Set((S.meta.remoteDeletes || []).concat(paths))];
+  await saveMeta();
+}
+let deleting = null;   // the run in progress, so a second caller waits for it instead of racing it
+function runRemoteDeletes() { return deleting || (deleting = runRemoteDeletesNow().finally(() => { deleting = null; })); }
+async function runRemoteDeletesNow() {
+  if (!syncOn()) return false;
+  const q = () => S.meta.remoteDeletes || [], hadJson = q().includes("moments.json");
+  const drop = (p) => { S.meta.remoteDeletes = q().filter((x) => x !== p); };
+  let ok = true;
+  try {
+    if (q().some((p) => p.startsWith("audio/"))) {
+      for (const it of await ghList("audio")) {
+        const p = "audio/" + it.name.replace(/\.\w+$/, "");
+        if (!q().includes("audio/*") && !q().includes(p)) continue;   // checked again per file: an undo may have pulled one out meanwhile
+        await ghDelete("audio/" + it.name, it.sha || (await ghSha("audio/" + it.name)), "remove voice note");
+      }
+      for (const p of q()) if (p.startsWith("audio/")) drop(p);
+    }
+    if (q().includes("moments.json")) {
+      const sha = await ghSha("moments.json");
+      if (sha) await ghDelete("moments.json", sha, "remove moments");
+      drop("moments.json");
+    }
+  } catch { ok = false; }
+  if (ok && hadJson) S.meta.momentsSynced = 0;   // only once everything he asked for is gone; the next backup with the switch on sets it again
+  await saveMeta();
+  return ok;
+}
+function setWin(text) {
+  const date = today(), cur = S.moments.wins.find((x) => x.date === date && !x.del);
+  text = text.trim();
+  if (cur) { cur.text = text; cur.u = Date.now(); if (!text) cur.del = true; }
+  else if (text) S.moments.wins.push({ id: uid(), date, text, u: Date.now(), del: false });
+  saveMomentsSoon();
+}
+function addToList(k, inp) {
+  const v = (inp.value || "").trim();
+  if (!v) return inp.focus();
+  const L = S.moments.lists;
+  if (k === "steps") {   // a new step gets a key of its own; the five built-in keys stay reserved so old waves keep pointing at the right thing
+    let key = "s-" + (slug(v).slice(0, 24) || "step"), n = 2;
+    while (L.steps.some((s) => s.key === key)) key = "s-" + slug(v).slice(0, 24) + "-" + n++;
+    if (!L.steps.some((s) => s.label.toLowerCase() === v.toLowerCase())) L.steps.push({ key, label: v });
+  } else if (!L[k].some((x) => x.toLowerCase() === v.toLowerCase())) L[k].push(v);
+  L.u = Date.now();
+  saveMoments();
+  render();
+  const again = view.querySelector(`input[data-ladd="${k}"]`);
+  if (again) again.focus();
+}
+
 // ---------- actions ----------
 const ACT = {
+  // moments
+  chip(b) {
+    const w = findWave(b.dataset.id);
+    if (!w) return;
+    const arr = w[b.dataset.k], i = arr.indexOf(b.dataset.v);
+    if (i >= 0) arr.splice(i, 1); else arr.push(b.dataset.v);
+    b.classList.toggle("on", i < 0);
+    touch(w);
+    saveMoments();
+  },
+  step(b) {
+    const w = findWave(b.dataset.id);
+    if (!w) return;
+    const i = w.steps.indexOf(b.dataset.k);
+    if (i >= 0) w.steps.splice(i, 1); else w.steps.push(b.dataset.k);
+    b.closest(".pstep").classList.toggle("done", i < 0);
+    touch(w);
+    saveMoments();
+  },
+  rec(b) { const w = findWave(b.dataset.id); if (w) startRec(w); },
+  intensity(b) {   // the 1-10 buttons on the wave screen: no re-render under his thumb, like the chips
+    const w = findWave(b.dataset.id);
+    if (!w) return;
+    w.intensity = +b.dataset.v;
+    b.parentElement.querySelectorAll("button").forEach((x) => { const on = x === b; x.classList.toggle("on", on); x.setAttribute("aria-pressed", on); });
+    const el = $("intVal"); if (el) el.textContent = b.dataset.v;
+    touch(w);
+    saveMomentsSoon();
+  },
+  async dropAudio(b) {
+    const w = findWave(b.dataset.id), id = b.dataset.a;
+    if (!w) return;
+    const blob = await get("audio:" + id);
+    w.audio = (w.audio || []).filter((a) => a !== id);
+    touch(w);
+    await saveMoments();
+    await dropAudioLocal(id);
+    if (repoMayHaveMoments()) { await queueRemoteDeletes(["audio/" + id]); runRemoteDeletes(); }
+    render();
+    toast("Voice note deleted", "Undo", async () => {
+      const wv = S.moments.waves.find((x) => x.id === w.id && !x.del);   // by id: a sync in between may have swapped the object
+      if (!wv) return toast("That wave is gone.");
+      if (blob) await put("audio:" + id, blob);
+      wv.audio = (wv.audio || []).concat(id);
+      touch(wv);
+      // the repo delete is cancelled if it hasn't run; if it already has, the upload queue puts the file back
+      S.meta.remoteDeletes = (S.meta.remoteDeletes || []).filter((p) => p !== "audio/" + id);
+      if (S.settings.momentsBackup && S.settings.momentsAudioBackup && blob) S.meta.audioQueue.push(id);
+      await saveMeta();
+      await saveMoments();
+      render();
+    });
+  },
+  fInt(b) { if (!fdraft) return; fdraft.intensity = +b.dataset.v; b.parentElement.querySelectorAll("button").forEach((x) => { const on = x === b; x.classList.toggle("on", on); x.setAttribute("aria-pressed", on); }); const el = $("intVal"); if (el) el.textContent = b.dataset.v; saveFdraft(); },
+  fMins(b) { if (!fdraft) return; fdraft.mins = b.dataset.v === "" ? null : +b.dataset.v; b.parentElement.querySelectorAll("button").forEach((x) => x.classList.toggle("on", x === b)); saveFdraft(); },
+  fEnd(b) { if (fdraft) { fdraft.ended = b.dataset.v; saveFdraft(); render(); } },
+  fHelp(b) { if (!fdraft) return; const i = fdraft.helped.indexOf(b.dataset.k); if (i >= 0) fdraft.helped.splice(i, 1); else fdraft.helped.push(b.dataset.k); b.classList.toggle("on", i < 0); saveFdraft(); },
+  async saveFollow(b) {
+    const w = findWave(b.dataset.id), d = fdraft;
+    if (!w || !d || !d.ended) return;
+    const other = (d.other || "").trim();
+    w.follow = { at: (w.follow && w.follow.at) || Date.now(), intensity: d.intensity == null ? null : +d.intensity, ended: d.ended, mins: typeof d.mins === "number" ? d.mins : null, helped: d.helped.concat(other ? [other] : []) };
+    w.asked = true;
+    touch(w);
+    fdraft = null;
+    await saveFdraft(true);
+    await saveMoments();
+    go("#/wave/" + w.id);
+    toast(d.ended === "old" ? "Noted. No shame." : d.ended === "still" ? "Noted. Check back whenever." : "Noted. One more ridden out.");
+  },
+  async dismissFollow(b) { const w = findWave(b.dataset.id); if (!w) return; w.dismissed = true; touch(w); await saveMoments(); render(); },
+  async deleteWave(b) {
+    if (!armed(b, "Tap again to delete")) return;
+    const i = S.moments.waves.findIndex((x) => x.id === b.dataset.id);
+    if (i < 0) return;
+    const ids = S.moments.waves[i].audio || [];
+    if (rec && rec.waveId === b.dataset.id) stopRec();
+    S.moments.waves[i] = { id: b.dataset.id, u: Date.now(), del: true };   // a tombstone, not the content
+    for (const a of ids) await dropAudioLocal(a);
+    await saveMoments();
+    if (ids.length && repoMayHaveMoments()) { await queueRemoteDeletes(ids.map((a) => "audio/" + a)); runRemoteDeletes(); }
+    go("#/moments");
+    toast("Wave deleted");
+  },
+  ciChip(b) { const i = ci.feelings.indexOf(b.dataset.v); if (i >= 0) ci.feelings.splice(i, 1); else ci.feelings.push(b.dataset.v); b.classList.toggle("on", i < 0); },
+  async ciSave(b) {
+    S.moments.checkins.push({ id: uid(), at: Date.now(), feelings: ci.feelings.slice(), overall: +b.dataset.v, u: Date.now(), del: false });
+    ci = { feelings: [] };
+    ciDone = Date.now();
+    await saveMoments();
+    render();
+    toast("Noted");
+    // "Noted ✓" makes way for the next check-in on its own, unless he's typing somewhere on the screen
+    setTimeout(() => { const a = document.activeElement, typing = !!a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName) && view.contains(a); if ($("checkin") && Date.now() - ciDone >= 4000 && !typing) render(); }, 4100);
+  },
+  async dismissCheckin() { S.meta.checkinDismissed = nightKey(); await saveMeta(); render(); },
+  habit(b) {
+    const week = weekOf(today()), k = b.dataset.k, cur = S.moments.habits.find((t) => t.week === week && t.key === k);
+    if (cur) { cur.del = !cur.del; cur.u = Date.now(); }
+    else S.moments.habits.push({ id: uid(), week, key: k, at: Date.now(), u: Date.now(), del: false });
+    saveMoments();
+  },
+  addList(b) { const inp = view.querySelector(`input[data-ladd="${b.dataset.l}"]`); if (inp) addToList(b.dataset.l, inp); },
+  dropList(b) { const L = S.moments.lists; L[b.dataset.l] = L[b.dataset.l].filter((x) => x !== b.dataset.v); L.u = Date.now(); saveMoments(); render(); },
+  dropStep(b) { const L = S.moments.lists; L.steps = L.steps.filter((s) => s.key !== b.dataset.k); L.u = Date.now(); saveMoments(); render(); },
+  openReflection() { refl = { open: true }; render(); },
+  askReflection() { askReflection(); },
+  async removeMomentsBackup(b) {
+    if (!armed(b, "Tap again to remove (older versions stay in git history)")) return;
+    await queueRemoteDeletes(["moments.json", "audio/*"]);
+    const done = await runRemoteDeletes();
+    render();
+    toast(done ? "Moments removed from the backup" : "Some files couldn't be removed yet; will retry");
+  },
+  async deleteMoments(b) {
+    if (!armed(b, "Tap again to delete everything here and in the backup")) return;
+    if (rec) stopRec();
+    const ids = allAudioIds(), now = Date.now(), M = S.moments;
+    // local: gone, and the lists and contact back to stock (they can hold his own words). The wipe mark keeps a later merge from bringing any of it back.
+    M.waves = []; M.checkins = []; M.habits = []; M.wins = []; M.reflections = [];
+    M.lists = defaultLists(now);
+    S.meta.momentsWipedAt = now;
+    S.settings.waveContactName = ""; S.settings.waveContactPhone = "";
+    pend = null; fdraft = null; ci = { feelings: [] };
+    await saveSettings();
+    await saveFdraft(true);
+    for (const a of ids) await dropAudioLocal(a);
+    // repo: the files go, switch or no switch, as long as a copy may be there; failures stay queued and show on this screen
+    const remote = repoMayHaveMoments();
+    if (remote) await queueRemoteDeletes(["moments.json", "audio/*"]);
+    await saveMeta();
+    await saveMoments();
+    render();
+    toast("All moments deleted");
+    if (remote && syncOn()) { const done = await runRemoteDeletes(); render(); if (!done) toast("Some files couldn't be removed yet; will retry"); }
+  },
   // talk
   async newTalk(b) { b.disabled = true; await pullNotes(); go("#/talk/new"); },
   async send(b) {
@@ -1722,6 +2512,7 @@ const ACT = {
       // frozen at the first message: the system prompt stays the same (and cached) for the whole talk, whatever he edits later
       if (t.notes == null) t.notes = S.talkNotes.text || "";
       if (t.about == null) t.about = (S.talkAbout || "").trim();
+      if (t.moments == null) t.moments = S.settings.talkMoments && !t.messages.length ? momentsSummary(14) : "";   // new talks only: an older talk's prompt stays byte-identical
       t.messages.push({ role: "user", text, at: Date.now() });
       t.u = Date.now();
       await saveTalks();
@@ -2101,6 +2892,7 @@ const ACT = {
     for (const k of await allKeys()) if (String(k).startsWith("photo:")) photos[k.slice(6)] = await get(k);
     const data = { app: "plate", exported: new Date().toISOString(), settings: Object.fromEntries(GOAL_KEYS.map((k) => [k, S.settings[k]])),
       favs: S.favs, days: S.days, steps: S.steps, profile: S.profile, posts: S.posts, templates: S.templates, workouts: S.workouts, photos };
+    if (S.settings.momentsBackup) data.moments = momentsForSync();   // same rule as the repo: only when he opted in; never audio, never reflections
     const blob = new Blob([JSON.stringify(data)], { type: "application/json" });
     const file = new File([blob], "plate-" + today() + ".json", { type: "application/json" });
     if (navigator.canShare && navigator.canShare({ files: [file] })) { try { await navigator.share({ files: [file] }); return; } catch { /* fall through to download */ } }
@@ -2139,6 +2931,15 @@ view.addEventListener("input", (e) => {
   const t = e.target;
   if (t.id === "talkIn") { tdraft[route().args[0]] = t.value; t.style.height = "auto"; t.style.height = Math.min(140, t.scrollHeight) + "px"; return; }
   if (t.id === "talkAbout") { S.talkAbout = t.value; return saveAbout(); }
+  if (t.dataset.wave) {   // riding a wave: the one-liner autosaves, no re-render under his thumb
+    const w = findWave(t.dataset.id);
+    if (!w) return;
+    w.text = t.value;
+    touch(w);
+    return saveMomentsSoon();
+  }
+  if (t.dataset.fbind && fdraft) { fdraft[t.dataset.fbind] = t.value; return saveFdraft(); }
+  if (t.id === "winIn") return setWin(t.value);
   if (t.dataset.pbind && S.pdraft) { S.pdraft[t.dataset.pbind] = t.value; return savePdraft(); }
   if (t.dataset.wb && S.wdraft) {
     const d = S.wdraft, k = t.dataset.wb;
@@ -2190,7 +2991,18 @@ view.addEventListener("change", async (e) => {
   if (k === "token" || k === "repo") { S.meta.restored = 0; await saveMeta(); if (syncOn()) syncNow(); else setSyncStatus("Not backed up: everything lives on this phone only."); }
   else if (GOAL_KEYS.includes(k)) scheduleSync(2000);
   else if (k === "restTimer") restBar();
+  else if (k === "momentsBackup") {   // off takes the audio switch with it; on starts the first upload
+    if (!v) { S.settings.momentsAudioBackup = false; await saveSettings(); } else scheduleSync(500);
+    render();
+  } else if (k === "momentsAudioBackup" && v) {   // every note already on the phone goes up too
+    S.meta.audioQueue = [...new Set(S.meta.audioQueue.concat(allAudioIds()))];
+    await saveMeta();
+    scheduleSync(500);
+  }
   toast("Saved");
+});
+view.addEventListener("keydown", (e) => {
+  if (e.key === "Enter" && e.target.dataset && e.target.dataset.ladd) { e.preventDefault(); addToList(e.target.dataset.ladd, e.target); }
 });
 $("rest").addEventListener("click", (e) => {
   const b = e.target.closest("[data-act]");
@@ -2231,6 +3043,7 @@ document.addEventListener("visibilitychange", () => {
   if (Date.now() - (S.meta.lastSync || 0) > 10 * 60e3) syncNow();
   if (["today"].includes(route().name)) render();
   restBar();   // the phone was locked: show what's actually left of the rest, not where the counter stopped
+  checkFollow();
 });
 
 // ---------- boot ----------
@@ -2240,6 +3053,7 @@ if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catc
 if (["review", "edit"].includes(route().name) && !(S.draft && S.draft.stage === "review")) location.hash = "#/";
 render();
 restBar();
+checkFollow();   // a wave from a while ago with no follow-up yet: ask once
 if (syncOn()) syncNow();
 </script>
 </body>

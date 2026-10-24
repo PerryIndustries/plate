@@ -85,7 +85,7 @@ const notesCalls = () => calls.filter((c) => c.body.stream !== true);
   const wordsFile = path.join(__dirname, "private-words.txt");
   if (fs.existsSync(wordsFile)) {
     const words = fs.readFileSync(wordsFile, "utf8").split(/\r?\n/).map((s) => s.trim().toLowerCase()).filter(Boolean);
-    const files = ["../docs/index.html", "smoke.cjs", "progress.cjs", "workout.cjs", "talk.cjs", "../README.md"];
+    const files = ["../docs/index.html", "smoke.cjs", "progress.cjs", "workout.cjs", "talk.cjs", "moments.cjs", "../README.md"];
     const leaked = files.flatMap((f) => { const src = fs.readFileSync(path.join(__dirname, f), "utf8").toLowerCase(); return words.filter((w) => src.includes(w)).map((w) => f + ": " + w); });
     ok(leaked.length === 0, "no personal details in public files", leaked);
   } else console.log("SKIP personal-details check (no tests/private-words.txt)");
@@ -225,7 +225,7 @@ const notesCalls = () => calls.filter((c) => c.body.stream !== true);
   ok(nc && nc.body.stream !== true && nc.body.model === "claude-opus-5-5" && nc.body.max_tokens === 16000, "notes call is non-streaming, max_tokens 16000", nc && nc.body.max_tokens);
   ok(nc.body.output_config.effort === "low" && nc.body.output_config.format.type === "json_schema" && nc.body.output_config.format.schema.required.join() === "notes,summary", "notes call: low effort, json schema");
   ok(nc.body.fallbacks === "default" && /server-side-fallback-2026-07-01/.test(nc.headers["anthropic-beta"] || ""), "notes call keeps fallbacks");
-  ok(nc.body.system.startsWith("You keep Perry's private talk notes") && nc.body.system.includes("every existing section and its order exactly as they are"), "NOTES_SYSTEM keeps every existing section");
+  ok(nc.body.system.startsWith("You keep Perry's private talk notes") && nc.body.system.includes("every existing section and its order exactly as they are") && nc.body.system.includes("Don't record counts or statistics from the Moments summary in the notes."), "NOTES_SYSTEM keeps every existing section and keeps Moments counts out");
   const np = nc.body.messages[0].content;
   ok(/^Today's date: \d{4}-\d{2}-\d{2}\n\nCurrent notes:\n/.test(np) && np.includes("Current notes:\n" + pcNotes) && np.includes("## Wave playbook"), "notes prompt carries the current file incl. the extra section");
   ok(np.includes("\n\nConversation:\nPerry: I want next week to be calmer\nYou: That's fair."), "notes prompt carries the conversation as Perry:/You: lines");
