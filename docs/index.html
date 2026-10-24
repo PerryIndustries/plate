@@ -142,6 +142,34 @@
     justify-content: center; margin: -22px 8px 0; box-shadow: 0 6px 20px rgba(61,220,132,.3); }
   .tabbar a.plus svg { width: 30px; height: 30px; }
 
+  /* progress profile */
+  .profile { display: flex; gap: 18px; align-items: center; margin-bottom: 12px; }
+  .avatar { width: 86px; height: 86px; border-radius: 50%; background: var(--card2) center/cover no-repeat; flex: none;
+    border: 2px solid var(--accent); display: flex; align-items: center; justify-content: center; font-size: 30px; }
+  .pstats { flex: 1; display: grid; grid-template-columns: repeat(3, 1fr); text-align: center; }
+  .pstats b { display: block; font-size: 19px; }
+  .pstats span { font-size: 12px; color: var(--dim); }
+  .pgrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 3px; margin: 0 -16px; }
+  .pgrid a { position: relative; aspect-ratio: 3 / 4; background: var(--card2) center/cover no-repeat; display: block; }
+  .pgrid .w { position: absolute; left: 6px; bottom: 6px; font-size: 12px; font-weight: 700; color: #fff;
+    background: rgba(0,0,0,.55); padding: 2px 6px; border-radius: 6px; }
+  .pgrid .d { position: absolute; right: 6px; bottom: 6px; font-size: 11px; color: #fff; background: rgba(0,0,0,.55); padding: 2px 6px; border-radius: 6px; }
+  .pgrid .multi { position: absolute; right: 6px; top: 6px; font-size: 13px; color: #fff; text-shadow: 0 1px 3px #000; }
+  .carousel { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; margin: 0 -16px; scrollbar-width: none; }
+  .carousel::-webkit-scrollbar { display: none; }
+  .carousel img { flex: none; width: 100%; scroll-snap-align: center; object-fit: contain; max-height: 72vh; background: #000; }
+  .dots { text-align: center; color: var(--dim); font-size: 12px; margin: 6px 0 10px; }
+  .compare { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin: 0 -10px; }
+  .compare img { width: 100%; aspect-ratio: 3 / 4; object-fit: cover; border-radius: 12px; background: #000; display: block; }
+  .compare .cap { text-align: center; font-size: 13px; margin-top: 6px; }
+  .picks { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 12px; }
+  .picks div, .picks .add { aspect-ratio: 3 / 4; background: var(--card2) center/cover no-repeat; border-radius: 10px; position: relative; }
+  input[type=date] { width: 100%; background: var(--card2); border: 1px solid var(--line); border-radius: 12px; padding: 12px; min-height: 48px; }
+  .picks .x { position: absolute; top: 4px; right: 4px; width: 28px; height: 28px; font-size: 15px; background: rgba(0,0,0,.6); color: #fff; }
+  .picks .add { display: flex; align-items: center; justify-content: center; font-size: 28px; color: var(--dim); border: 2px dashed var(--line); background: none; }
+  .nudge { border: 1px solid var(--accent); }
+  .delta.down { color: var(--accent); } .delta.up { color: var(--warn); }
+
   #toast { position: fixed; left: 50%; bottom: calc(96px + env(safe-area-inset-bottom)); transform: translateX(-50%) translateY(20px);
     background: #2B302E; color: var(--text); padding: 12px 16px; border-radius: 12px; display: flex; gap: 14px; align-items: center;
     opacity: 0; pointer-events: none; transition: .2s; z-index: 9; max-width: calc(100% - 32px); box-shadow: 0 8px 30px rgba(0,0,0,.4); }
@@ -155,11 +183,12 @@
   <a href="#/" data-tab="today"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4"/></svg>Today</a>
   <a href="#/history" data-tab="history"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 20V10M12 20V4M19 20v-7"/></svg>History</a>
   <a href="#/add" class="plus" data-tab="add" aria-label="Log food"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></a>
-  <a href="#/favorites" data-tab="favorites"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/></svg>Saved</a>
+  <a href="#/me" data-tab="me"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg>Progress</a>
   <a href="#/settings" data-tab="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg>Settings</a>
 </nav>
 <div id="toast"><span id="toastText"></span><button id="toastBtn" hidden></button></div>
 <input type="file" id="photoIn" accept="image/*" hidden>
+<input type="file" id="progIn" accept="image/*" multiple hidden>
 
 <script type="module">
 // ---------- constants ----------
@@ -168,7 +197,8 @@ const MODEL = "claude-opus-5-5";
 const PRICE_IN = 4 / 1e6, PRICE_OUT = 20 / 1e6;   // Claude Opus 5.5, dollars per token
 const DEFAULT_REPO = "PerryIndustries/plate-data";
 const DEFAULTS = { cal: 2050, protein: 160, carbs: 215, fat: 60, stepsGoal: 9000, dayStart: 4, goalsU: 0,
-  apiKey: "", token: "", repo: DEFAULT_REPO };
+  apiKey: "", token: "", repo: DEFAULT_REPO, backupProgress: true };
+const PROFILE_DEFAULT = { name: "Me", goal: 150, avatar: null, u: 0 };
 const GOAL_KEYS = ["cal", "protein", "carbs", "fat", "stepsGoal", "dayStart"];
 // Starting favorites so the first week needs no typing. Restaurant numbers are estimates; edit them freely.
 const STARTERS = [
@@ -226,7 +256,8 @@ const put = (k, v) => db ? kv("readwrite", (s) => s.put(v, k)) : Promise.resolve
 const allKeys = () => db ? kv("readonly", (s) => s.getAllKeys()) : Promise.resolve([...mem.keys()]);
 
 // ---------- state ----------
-const S = { settings: {}, favs: [], days: {}, steps: {}, meta: {}, draft: null, photos: new Map() };
+const S = { settings: {}, favs: [], days: {}, steps: {}, meta: {}, draft: null, photos: new Map(),
+  posts: [], profile: {}, pdraft: null };
 
 async function load() {
   S.settings = Object.assign({}, DEFAULTS, (await get("settings")) || {});
@@ -235,6 +266,9 @@ async function load() {
   S.meta = Object.assign({ dirty: [], photoQueue: [], usage: {}, seeded: 0, restored: 0 }, (await get("meta")) || {});
   for (const k of await allKeys()) if (String(k).startsWith("day:")) S.days[k.slice(4)] = await get(k);
   S.draft = (await get("draft")) || null;
+  S.posts = (await get("posts")) || [];
+  S.profile = Object.assign({}, PROFILE_DEFAULT, (await get("profile")) || {});
+  S.pdraft = (await get("pdraft")) || null;
   if (!S.meta.seeded) {
     const now = Date.now();
     S.favs = STARTERS.map((s, i) => ({ id: "starter" + i, title: s.title, sub: s.sub, items: [],
@@ -349,12 +383,23 @@ async function photoData(id) {
   if (d) S.photos.set(id, d);
   return d;
 }
-// fill <div data-photo="id"> backgrounds after a render
+// fill <div data-photo="id"> backgrounds and <img data-img="id"> sources after a render
 function hydratePhotos() {
   view.querySelectorAll("[data-photo]").forEach(async (el) => {
     const d = await photoData(el.dataset.photo);
-    if (d) { el.style.backgroundImage = "url(" + d + ")"; el.textContent = ""; }
+    if (!d) return;
+    el.style.backgroundImage = "url(" + d + ")";
+    if (el.classList.contains("thumb") || el.classList.contains("avatar")) el.textContent = "";
   });
+  view.querySelectorAll("img[data-img]").forEach(async (el) => {
+    const d = await photoData(el.dataset.img);
+    if (d) el.src = d;
+  });
+}
+async function loadImage(file) {
+  const url = URL.createObjectURL(file);
+  try { const img = new Image(); img.src = url; await img.decode(); return img; }
+  finally { setTimeout(() => URL.revokeObjectURL(url), 1000); }
 }
 
 // ---------- Claude ----------
@@ -465,6 +510,7 @@ function mergeById(remote, local) {
 const mergeDay = (r, l) => ({ date: (r || l || {}).date, entries: mergeById((r || {}).entries, (l || {}).entries), steps: newer((r || {}).steps, (l || {}).steps) });
 const mergeFavs = (r, l) => ({ favs: mergeById((r || {}).favs, (l || {}).favs) });
 const mergeGoals = (r, l) => newer(r, l);
+const mergeProgress = (r, l) => ({ profile: newer((r || {}).profile, (l || {}).profile), posts: mergeById((r || {}).posts, (l || {}).posts) });
 // Merge one file with our copy and write it back when we add anything.
 async function syncFile(path, local, merge) {
   for (let attempt = 0; attempt < 3; attempt++) {
@@ -501,6 +547,14 @@ async function syncNow({ full = false } = {}) {
     const f = await syncFile("favorites.json", { favs: S.favs }, mergeFavs);
     S.favs = f.favs;
     await put("favs", S.favs);
+    // progress profile and posts (the photos themselves go up through photoQueue)
+    const pr = await syncFile("progress.json", { profile: S.profile, posts: S.posts }, mergeProgress);
+    if (pr) {
+      S.posts = pr.posts || [];
+      if (pr.profile) S.profile = Object.assign({}, PROFILE_DEFAULT, pr.profile);
+      await put("posts", S.posts);
+      await put("profile", S.profile);
+    }
     // days: everything changed here, plus the last two days in case another device logged something
     const dates = new Set([...S.meta.dirty, today(), shiftDay(today(), -1)]);
     if (full || !S.meta.restored) {
@@ -523,7 +577,7 @@ async function syncNow({ full = false } = {}) {
     S.meta.lastSync = Date.now();
     await saveMeta();
     setSyncStatus("Backed up " + new Date().toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }));
-    if (["today", "history"].includes(route().name)) render();
+    if (["today", "history", "me"].includes(route().name)) render();
   } catch (e) {
     setSyncStatus("Backup failed: " + e.message, true);
   } finally { syncing = false; }
@@ -561,9 +615,11 @@ function go(hash) { if (location.hash === hash) render(); else location.hash = h
 
 function render() {
   const r = route();
-  const tab = { today: "today", day: "today", history: "history", add: "add", review: "add", edit: "today", favorites: "favorites", settings: "settings" }[r.name] || "today";
+  const tab = { today: "today", day: "today", history: "history", add: "add", review: "add", edit: "today", favorites: "add", settings: "settings",
+    me: "me", post: "me", newpost: "me", compare: "me" }[r.name] || "today";
   document.querySelectorAll("#tabs a").forEach((a) => a.classList.toggle("on", a.dataset.tab === tab));
-  const fn = { today: viewDay, day: viewDay, add: viewAdd, review: viewReview, edit: viewReview, history: viewHistory, favorites: viewFavs, settings: viewSettings }[r.name] || viewDay;
+  const fn = { today: viewDay, day: viewDay, add: viewAdd, review: viewReview, edit: viewReview, history: viewHistory, favorites: viewFavs, settings: viewSettings,
+    me: viewMe, post: viewPost, newpost: viewNewPost, compare: viewCompare }[r.name] || viewDay;
   view.innerHTML = fn(r);
   hydratePhotos();
 }
@@ -611,6 +667,7 @@ function viewDay(r) {
     <div class="bar"><i style="width:${stepPct}%;background:var(--accent)"></i></div>
     <div id="stepsEdit"></div>
   </div>
+  ${isToday ? progressNudge() : ""}
   <div class="card">
     <div class="spread"><b>Food</b><a class="small" href="#/add/${date}">+ Add</a></div>
     ${entries.length ? entries.map((e) => `
@@ -638,7 +695,8 @@ function viewAdd(r) {
   <div id="estStatus" style="margin-top:12px"></div>
   <button class="btn ghost block" data-act="manual" data-d="${date}">Type the numbers myself</button>
   ${favs.length ? `<h2>Saved meals · one tap logs it</h2><div class="favs">${favs.map((f) => `
-    <button class="fav" data-act="logFav" data-id="${f.id}" data-d="${date}"><b>${h(f.title)}</b><span>${fmt(f.cal)} cal · ${fmt(f.p)}g protein</span></button>`).join("")}</div>` : ""}`;
+    <button class="fav" data-act="logFav" data-id="${f.id}" data-d="${date}"><b>${h(f.title)}</b><span>${fmt(f.cal)} cal · ${fmt(f.p)}g protein</span></button>`).join("")}</div>` : ""}
+  <p style="text-align:center"><a class="small" href="#/favorites">Edit saved meals</a></p>`;
 }
 
 function draftTotals(d) {
@@ -784,6 +842,7 @@ function viewSettings() {
     <div id="syncStatus" class="small ${S.syncBad ? "error" : "dim"}">${h(S.syncStatus || (syncOn() ? "" : "Not backed up yet: everything lives on this phone only."))}</div>
     <div class="row" style="margin-top:10px"><button class="btn" style="flex:1" data-act="sync">Back up now</button><button class="btn" style="flex:1" data-act="restore">Pull everything</button></div>
     <p class="small dim" style="margin:10px 0 0">Your log and photos are copied to the private repo, so a new phone gets everything back with "Pull everything". The same token lets the iPhone Shortcut send your steps.</p>
+    <label class="check" style="margin-top:8px"><input type="checkbox" data-set="backupProgress" ${s.backupProgress !== false ? "checked" : ""}> Back up progress photos too (turn off to keep them on this phone only)</label>
   </div>
 
   <h2>Steps from your iPhone</h2>
@@ -803,12 +862,202 @@ function viewSettings() {
   </div>
 
   <h2>Your data</h2>
-  <div class="card"><button class="btn block" data-act="export">Download everything as a file</button></div>
+  <div class="card"><a class="btn block" href="#/favorites" style="margin-bottom:8px">Edit saved meals</a><button class="btn block" data-act="export">Download everything as a file</button></div>
   <p class="small dim" style="text-align:center">Plate · your food log lives on this phone${syncOn() ? " and in your private backup" : ""}.</p>`;
 }
 
+// ---------- progress profile (private: photos stay on the phone and the private backup, never sent to Claude) ----------
+const livePosts = () => S.posts.filter((p) => !p.del).sort((a, b) => (a.date === b.date ? (a.at || 0) - (b.at || 0) : a.date < b.date ? -1 : 1));
+const daysBetween = (a, b) => Math.round((new Date(b + "T12:00:00") - new Date(a + "T12:00:00")) / 864e5);
+const shortMD = (date) => new Date(date + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" });
+const longDate = (date) => new Date(date + "T12:00:00").toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" });
+const lb = (n) => (+n).toFixed(1).replace(/\.0$/, "");
+function progressStats() {
+  const ps = livePosts(), w = ps.filter((p) => p.weight > 0);
+  const first = w[0] || null, last = w[w.length - 1] || null;
+  return { ps, first, last, lost: first && last ? first.weight - last.weight : null,
+    weeks: ps.length ? Math.floor(daysBetween(ps[0].date, today()) / 7) : 0 };
+}
+function progressNudge() {
+  const ps = livePosts();
+  const card = (title, sub) => `<a class="card nudge" href="#/newpost" data-act="newPost" style="display:block;text-decoration:none;color:var(--text)"><b>${title}</b><div class="small dim">${sub}</div></a>`;
+  if (!ps.length) return card("Start your progress profile", "Take your day-one photos. Only you see them.");
+  const since = daysBetween(ps[ps.length - 1].date, today());
+  return since >= 7 ? card("Weekly check-in", since + " days since your last progress photo. Same mirror, same light.") : "";
+}
+function deltaHtml(cur, prev, label) {
+  if (!(cur > 0) || !(prev > 0)) return "";
+  const d = Math.round((cur - prev) * 10) / 10;
+  const txt = d === 0 ? "no change" : (d < 0 ? "−" : "+") + lb(Math.abs(d)) + " lb";
+  return `<span class="delta ${d < 0 ? "down" : d > 0 ? "up" : ""}">${txt}</span> <span class="dim">${label}</span>`;
+}
+
+function viewMe() {
+  const st = progressStats(), p = S.profile, ps = st.ps.slice().reverse();
+  const start = st.first ? st.first.weight : null, cur = st.last ? st.last.weight : null;
+  const pct = start && cur && start > p.goal ? Math.max(0, Math.min(100, ((start - cur) / (start - p.goal)) * 100)) : 0;
+  const lost = st.lost == null ? "—" : st.lost === 0 ? "0" : (st.lost > 0 ? "−" : "+") + lb(Math.abs(st.lost));
+  return `
+  <div class="profile">
+    <div class="avatar" ${p.avatar ? `data-photo="${p.avatar}"` : ""}>${p.avatar ? "" : "🙂"}</div>
+    <div style="flex:1;min-width:0">
+      <div class="spread"><b style="font-size:20px">${h(p.name)}</b><button class="btn ghost" style="min-height:0;padding:4px 8px" data-act="editProfile">Edit</button></div>
+      <div class="pstats" style="margin-top:6px">
+        <div><b>${st.ps.length}</b><span>posts</span></div>
+        <div><b class="${st.lost > 0 ? "ok" : ""}">${lost}</b><span>lb since start</span></div>
+        <div><b>${st.weeks}</b><span>weeks in</span></div>
+      </div>
+    </div>
+  </div>
+  <div id="profEdit"></div>
+  <div class="card">
+    <div class="spread small"><span class="dim">Start ${start ? lb(start) : "—"}</span><span><b>${cur ? lb(cur) + " lb" : "—"}</b> now</span><span class="dim">Goal ${lb(p.goal)}</span></div>
+    <div class="bar"><i style="width:${pct}%;background:var(--accent)"></i></div>
+  </div>
+  <button class="btn primary block" data-act="newPost" style="margin-bottom:14px">+ New progress post</button>
+  ${ps.length ? `<div class="pgrid">${ps.map((x) => `<a href="#/post/${x.id}" data-photo="${x.photos[0] || ""}" aria-label="Post from ${h(shortMD(x.date))}">
+      ${x.photos.length > 1 ? `<span class="multi">❐</span>` : ""}${x.weight ? `<span class="w">${lb(x.weight)}</span>` : ""}<span class="d">${h(shortMD(x.date))}</span></a>`).join("")}</div>`
+    : `<p class="dim small" style="text-align:center">No posts yet. Your first one is day one.</p>`}
+  <p class="small dim" style="text-align:center;margin-top:16px">Private. These photos live on this phone${syncOn() && S.settings.backupProgress !== false ? " and in your private backup" : ""} and are never sent to Claude.</p>`;
+}
+
+function viewPost(r) {
+  const p = S.posts.find((x) => x.id === r.args[0] && !x.del);
+  if (!p) return `<p class="dim">That post is gone. <a href="#/me">Back to your profile</a></p>`;
+  const ps = livePosts(), i = ps.indexOf(p);
+  const prevW = ps.slice(0, i).reverse().find((x) => x.weight > 0);
+  const firstW = ps.find((x) => x.weight > 0);
+  return `
+  <div class="spread" style="margin:4px 0 10px"><a href="#/me" class="small">‹ Profile</a><span class="dim small">${h(longDate(p.date))}</span></div>
+  <div class="carousel">${p.photos.map((id) => `<img data-img="${id}" alt="Progress photo">`).join("")}</div>
+  ${p.photos.length > 1 ? `<div class="dots">${p.photos.length} photos · swipe</div>` : ""}
+  <div class="card" style="margin-top:10px">
+    ${p.weight ? `<div class="spread"><b style="font-size:22px">${lb(p.weight)} lb</b><span class="small">${firstW && firstW !== p ? deltaHtml(p.weight, firstW.weight, "since start") : `<span class="dim">Day one</span>`}</span></div>` : `<span class="dim small">No weigh-in on this post</span>`}
+    ${prevW && p.weight ? `<div class="small" style="margin-top:4px">${deltaHtml(p.weight, prevW.weight, "since " + h(shortMD(prevW.date)))}</div>` : ""}
+    ${p.caption ? `<p style="margin:10px 0 0;white-space:pre-wrap">${h(p.caption)}</p>` : ""}
+  </div>
+  <div class="row"><a class="btn" style="flex:1" href="#/compare/${p.id}">Before / after</a><button class="btn" style="flex:1" data-act="setAvatar" data-id="${p.id}">Make profile pic</button></div>
+  <div class="row" style="margin-top:8px"><button class="btn ghost" style="flex:1" data-act="editPost" data-id="${p.id}">Edit</button><button class="btn danger" style="flex:1" data-act="deletePost" data-id="${p.id}">Delete</button></div>`;
+}
+
+function viewCompare(r) {
+  const ps = livePosts(), a = ps.find((x) => x.id === r.args[0]);
+  if (!a) return `<p class="dim">That post is gone. <a href="#/me">Back to your profile</a></p>`;
+  const others = ps.filter((x) => x !== a);
+  if (!others.length) return `<h1>Before / after</h1><p class="dim">This is your only post so far. Next week's check-in will be the first one to compare against.</p><a class="btn block" href="#/post/${a.id}">Back</a>`;
+  // default partner: day one, or the latest post when this is day one
+  const b = ps.find((x) => x.id === r.args[1] && x !== a) || (ps[0] !== a ? ps[0] : ps[ps.length - 1]);
+  const [before, after] = ps.indexOf(a) < ps.indexOf(b) ? [a, b] : [b, a];
+  const poses = Math.min(before.photos.length, after.photos.length);
+  const k = Math.min(+r.args[2] || 0, poses - 1);
+  const side = (x, label) => `<div><img data-img="${x.photos[k] || x.photos[0]}" alt="${label}"><div class="cap"><b>${label}</b> · ${h(shortMD(x.date))}${x.weight ? `<div class="dim">${lb(x.weight)} lb</div>` : ""}</div></div>`;
+  return `
+  <div class="spread" style="margin:4px 0 10px"><a href="#/post/${a.id}" class="small">‹ Post</a><b>Before / after</b><span></span></div>
+  <div class="compare">${side(before, "Before")}${side(after, "After")}</div>
+  ${poses > 1 ? `<div class="seg" style="margin-top:12px;justify-content:center">${Array.from({ length: poses }, (_, i) => `<button class="${i === k ? "on" : ""}" data-act="cmpPose" data-a="${a.id}" data-b="${b.id}" data-k="${i}">Photo ${i + 1}</button>`).join("")}</div>` : ""}
+  <div class="card" style="margin-top:12px;text-align:center">
+    <b>${daysBetween(before.date, after.date)} days apart</b>
+    ${before.weight && after.weight ? `<div style="margin-top:4px">${deltaHtml(after.weight, before.weight, "")}</div>` : ""}
+  </div>
+  <label class="field"><span>Compare with</span><select data-cmp="${a.id}">${others.slice().reverse().map((x) => `<option value="${x.id}" ${x === b ? "selected" : ""}>${h(shortMD(x.date))}${x === ps[0] ? " (day one)" : ""}${x.weight ? " · " + lb(x.weight) + " lb" : ""}</option>`).join("")}</select></label>`;
+}
+
+function viewNewPost() {
+  if (!S.pdraft) S.pdraft = { date: today(), photos: [], weight: "", caption: "" };
+  const d = S.pdraft, last = progressStats().last;
+  return `
+  <h1>${d.editing ? "Edit post" : "New progress post"}</h1>
+  ${d.editing ? `<div class="picks">${d.photoIds.map((id) => `<div data-photo="${id}"></div>`).join("")}</div>`
+    : `<div class="picks">${d.photos.map((ph, i) => `<div style="background-image:url(${ph})"><button class="x" data-act="dropPick" data-i="${i}" aria-label="Remove photo">×</button></div>`).join("")}
+        ${d.photos.length < 6 ? `<button class="add" data-act="pickProgress" aria-label="Add photos">+</button>` : ""}</div>
+      <p class="small dim" style="margin-top:0">Front, side and back work best. Same mirror, same light, in the morning before eating, so every week compares fairly.</p>`}
+  <div class="card">
+    <div class="grid2">
+      <label class="field"><span>Weight (lb)</span><input type="number" inputmode="decimal" step="0.1" data-pbind="weight" value="${h(d.weight ?? "")}" placeholder="${last ? lb(last.weight) : "e.g. 160.8"}"></label>
+      <label class="field"><span>Date</span><input type="date" data-pbind="date" value="${h(d.date)}"></label>
+    </div>
+    <label class="field" style="margin:0"><span>Note to yourself (optional)</span><textarea data-pbind="caption" placeholder="How you feel, what went well this week">${h(d.caption || "")}</textarea></label>
+  </div>
+  <button class="btn primary block" data-act="savePost">${d.editing ? "Save changes" : "Post"}</button>
+  <button class="btn ghost block" data-act="cancelPost">Cancel</button>`;
+}
+const savePdraft = () => put("pdraft", S.pdraft);
+
 // ---------- actions ----------
 const ACT = {
+  newPost(b, e) { e && e.preventDefault(); S.pdraft = { date: today(), photos: [], weight: "", caption: "" }; savePdraft(); go("#/newpost"); },
+  pickProgress() { $("progIn").value = ""; $("progIn").click(); },
+  dropPick(b) { S.pdraft.photos.splice(+b.dataset.i, 1); savePdraft(); render(); },
+  async savePost() {
+    const d = S.pdraft, w = parseFloat(d.weight);
+    const weight = w > 0 ? Math.round(w * 10) / 10 : null;
+    let id = d.id;
+    if (d.editing) {
+      const i = S.posts.findIndex((x) => x.id === d.id);
+      if (i < 0) return go("#/me");
+      S.posts[i] = Object.assign({}, S.posts[i], { date: d.date || today(), weight, caption: (d.caption || "").trim(), u: Date.now() });
+    } else {
+      if (!d.photos.length) return toast("Add at least one photo first.");
+      const ids = [];
+      for (const ph of d.photos) {
+        const pid = uid();
+        await put("photo:" + pid, ph);
+        S.photos.set(pid, ph);
+        ids.push(pid);
+        if (S.settings.backupProgress !== false) S.meta.photoQueue.push(pid);
+      }
+      id = uid();
+      S.posts.push({ id, date: d.date || today(), at: Date.now(), photos: ids, weight, caption: (d.caption || "").trim(), u: Date.now() });
+      if (!S.profile.avatar) { S.profile.avatar = ids[0]; S.profile.u = Date.now(); await put("profile", S.profile); }
+      await saveMeta();
+    }
+    await put("posts", S.posts);
+    S.pdraft = null;
+    await put("pdraft", null);
+    scheduleSync(2000);
+    go("#/post/" + id);
+    toast(d.editing ? "Saved" : "Posted");
+  },
+  async cancelPost() { const id = S.pdraft?.editing ? S.pdraft.id : null; S.pdraft = null; await put("pdraft", null); go(id ? "#/post/" + id : "#/me"); },
+  editPost(b) {
+    const p = S.posts.find((x) => x.id === b.dataset.id);
+    if (!p) return;
+    S.pdraft = { editing: true, id: p.id, date: p.date, weight: p.weight ?? "", caption: p.caption || "", photoIds: p.photos };
+    savePdraft();
+    go("#/newpost");
+  },
+  async deletePost(b) {
+    const i = S.posts.findIndex((x) => x.id === b.dataset.id);
+    if (i < 0) return;
+    const old = S.posts[i];
+    S.posts[i] = Object.assign({}, old, { del: true, u: Date.now() });
+    await put("posts", S.posts);
+    scheduleSync(2000);
+    go("#/me");
+    toast("Post deleted", "Undo", async () => { S.posts[i] = Object.assign({}, old, { del: false, u: Date.now() }); await put("posts", S.posts); scheduleSync(2000); render(); });
+  },
+  async setAvatar(b) {
+    const p = S.posts.find((x) => x.id === b.dataset.id);
+    if (!p) return;
+    S.profile = Object.assign({}, S.profile, { avatar: p.photos[0], u: Date.now() });
+    await put("profile", S.profile);
+    scheduleSync(2000);
+    toast("Profile picture updated");
+  },
+  cmpPose(b) { go("#/compare/" + b.dataset.a + "/" + b.dataset.b + "/" + b.dataset.k); },
+  editProfile() {
+    $("profEdit").innerHTML = `<div class="card">
+      <label class="field"><span>Name</span><input type="text" id="pf_name" value="${h(S.profile.name)}"></label>
+      <label class="field"><span>Goal weight (lb)</span><input type="number" inputmode="decimal" step="0.1" id="pf_goal" value="${h(S.profile.goal)}"></label>
+      <button class="btn primary block" data-act="saveProfile">Save</button></div>`;
+  },
+  async saveProfile() {
+    const name = ($("pf_name").value || "").trim() || "Me", goal = parseFloat($("pf_goal").value);
+    S.profile = Object.assign({}, S.profile, { name, goal: goal > 0 ? goal : S.profile.goal, u: Date.now() });
+    await put("profile", S.profile);
+    scheduleSync(2000);
+    render();
+  },
   day(b) { go(b.dataset.d === today() ? "#/" : "#/day/" + b.dataset.d); },
   steps(b, e) {
     if (e.target.closest("#stepsEdit")) return;
@@ -967,7 +1216,7 @@ const ACT = {
     const photos = {};
     for (const k of await allKeys()) if (String(k).startsWith("photo:")) photos[k.slice(6)] = await get(k);
     const data = { app: "plate", exported: new Date().toISOString(), settings: Object.fromEntries(GOAL_KEYS.map((k) => [k, S.settings[k]])),
-      favs: S.favs, days: S.days, steps: S.steps, photos };
+      favs: S.favs, days: S.days, steps: S.steps, profile: S.profile, posts: S.posts, photos };
     const blob = new Blob([JSON.stringify(data)], { type: "application/json" });
     const file = new File([blob], "plate-" + today() + ".json", { type: "application/json" });
     if (navigator.canShare && navigator.canShare({ files: [file] })) { try { await navigator.share({ files: [file] }); return; } catch { /* fall through to download */ } }
@@ -1004,6 +1253,7 @@ view.addEventListener("click", (e) => {
 });
 view.addEventListener("input", (e) => {
   const t = e.target;
+  if (t.dataset.pbind && S.pdraft) { S.pdraft[t.dataset.pbind] = t.value; return savePdraft(); }
   if (t.dataset.bind === "text") {
     const a = route().args[0];
     ensureInputDraft(/^\d{4}-\d{2}-\d{2}$/.test(a || "") ? a : today()).text = t.value;
@@ -1025,9 +1275,10 @@ view.addEventListener("input", (e) => {
 view.addEventListener("change", async (e) => {
   const t = e.target;
   if (t.dataset.bind === "saveFav" && S.draft) { S.draft.saveFav = t.checked; saveDraft(); return; }
+  if (t.dataset.cmp) return go("#/compare/" + t.dataset.cmp + "/" + t.value);
   const k = t.dataset.set;
   if (!k) return;
-  let v = t.value.trim();
+  let v = t.type === "checkbox" ? t.checked : t.value.trim();
   if (GOAL_KEYS.includes(k)) { v = +v; if (!(v >= 0)) return; S.settings.goalsU = Date.now(); }
   S.settings[k] = v;
   await saveSettings();
@@ -1050,6 +1301,17 @@ $("photoIn").addEventListener("change", async () => {
   } catch {
     toast("Couldn't open that photo. Try another one.");
   }
+});
+$("progIn").addEventListener("change", async () => {
+  const files = [...$("progIn").files];
+  if (!files.length) return;
+  if (!S.pdraft || S.pdraft.editing) S.pdraft = { date: today(), photos: [], weight: "", caption: "" };
+  for (const f of files.slice(0, 6 - S.pdraft.photos.length)) {
+    // 1080px keeps progress photos sharp enough to compare, and small enough to back up
+    try { S.pdraft.photos.push(scaled(await loadImage(f), 1080, 0.82)); } catch { toast("Couldn't open one of those photos."); }
+  }
+  await savePdraft();
+  render();
 });
 document.addEventListener("visibilitychange", () => {
   if (document.visibilityState !== "visible") return;
