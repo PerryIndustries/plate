@@ -177,6 +177,52 @@
   .heatmarks { display: grid; grid-template-columns: repeat(12, 1fr); gap: 3px; text-align: center; font-size: 10px; color: var(--accent); min-height: 14px; margin-top: 3px; }
   .delta.down { color: var(--accent); } .delta.up { color: var(--warn); }
 
+  /* lift */
+  .ex .last { font-size: 13px; color: var(--dim); margin: 4px 0 8px; }
+  .setrow { display: grid; grid-template-columns: 24px 1fr 18px 1fr 56px; gap: 8px; align-items: center; padding: 5px 0; }
+  .setrow .n, .setrow .times { color: var(--dim); font-size: 13px; text-align: center; }
+  .setrow input { text-align: center; font-size: 18px; padding: 10px 4px; min-height: 48px; appearance: textfield; -moz-appearance: textfield; }
+  .setrow input::-webkit-inner-spin-button, .setrow input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+  .tick { width: 56px; height: 48px; border: 0; border-radius: 12px; background: var(--card2); color: var(--dim); font-size: 22px; font-weight: 700; }
+  .setrow.done .tick { background: var(--accent); color: #06210F; }
+  .setrow.done input { border-color: var(--accent); color: var(--accent); }
+  .wrow { display: grid; grid-template-columns: 62px 1fr auto; gap: 10px; align-items: center; padding: 10px 0; border-top: 1px solid var(--line); font-size: 14px; text-decoration: none; color: var(--text); }
+  .wrow.two { grid-template-columns: 1fr auto; }
+  .wrow:first-child { border-top: 0; }
+  .chart { width: 100%; height: auto; display: block; }
+  .tpl .tex { border-top: 1px solid var(--line); padding: 10px 0; }
+  .trow { display: grid; grid-template-columns: 1fr 44px 44px 44px; gap: 6px; }
+  .trow .x, .tpl .row .x { background: var(--card2); border: 0; border-radius: 10px; min-height: 44px; color: var(--dim); font-size: 18px; flex: none; width: 44px; }
+  .trow .x:disabled { opacity: .3; }
+  .tnums { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin-top: 6px; }
+  .tnums label span { display: block; font-size: 11px; color: var(--dim); margin-bottom: 3px; }
+  .tnums input { padding: 10px 4px; text-align: center; }
+  .heat i.lift, i.key.lift { box-shadow: inset 0 0 0 2px var(--protein); }
+  #rest { position: fixed; left: 12px; right: 12px; bottom: calc(82px + env(safe-area-inset-bottom)); background: #2B302E; border-radius: 14px;
+    padding: 8px 8px 8px 16px; display: flex; align-items: center; gap: 10px; z-index: 6; box-shadow: 0 8px 30px rgba(0,0,0,.4); }
+  #rest[hidden] { display: none; }
+  #rest b { font-size: 26px; font-variant-numeric: tabular-nums; flex: 1; letter-spacing: -.01em; }
+  body.resting #toast { bottom: calc(160px + env(safe-area-inset-bottom)); }
+  body.resting { padding-bottom: calc(150px + env(safe-area-inset-bottom)); }   /* so the bar never hides the buttons at the end of the page */
+
+  /* talk */
+  main.talk { display: flex; flex-direction: column; padding-bottom: 0;
+    min-height: calc(100vh - 84px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+    min-height: calc(100dvh - 84px - env(safe-area-inset-top) - env(safe-area-inset-bottom)); }
+  .chat { flex: 1; display: flex; flex-direction: column; justify-content: flex-end; }
+  .msg { max-width: 86%; padding: 10px 14px; border-radius: 18px; margin: 4px 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+  .msg.u { align-self: flex-end; background: rgba(61,220,132,.2); border-bottom-right-radius: 6px; }
+  .msg.a { align-self: flex-start; background: var(--card); border-bottom-left-radius: 6px; }
+  .note { text-align: center; margin: 10px 0; }
+  .typing { display: inline-flex; gap: 4px; padding: 4px 0; vertical-align: middle; }
+  .typing i { width: 7px; height: 7px; border-radius: 50%; background: var(--dim); animation: blink 1.2s infinite; }
+  .typing i:nth-child(2) { animation-delay: .2s; } .typing i:nth-child(3) { animation-delay: .4s; }
+  @keyframes blink { 0%, 80%, 100% { opacity: .25; } 40% { opacity: 1; } }
+  .composer { position: sticky; bottom: calc(84px + env(safe-area-inset-bottom)); background: var(--bg); padding: 8px 0 10px; margin-top: 8px; }
+  .composer textarea { min-height: 48px; max-height: 140px; }
+  .composer .btn { flex: none; }
+  .notes { white-space: pre-wrap; margin: 0; font-family: inherit; font-size: 13px; line-height: 1.5; max-height: 45vh; overflow: auto; }
+
   #toast { position: fixed; left: 50%; bottom: calc(96px + env(safe-area-inset-bottom)); transform: translateX(-50%) translateY(20px);
     background: #2B302E; color: var(--text); padding: 12px 16px; border-radius: 12px; display: flex; gap: 14px; align-items: center;
     opacity: 0; pointer-events: none; transition: .2s; z-index: 9; max-width: calc(100% - 32px); box-shadow: 0 8px 30px rgba(0,0,0,.4); }
@@ -194,6 +240,7 @@
   <a href="#/settings" data-tab="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg>Settings</a>
 </nav>
 <div id="toast"><span id="toastText"></span><button id="toastBtn" hidden></button></div>
+<div id="rest" hidden><span class="dim small">Rest</span><b id="restLeft">0:00</b><button class="btn" data-act="restAdd">+30 s</button><button class="btn ghost" data-act="restSkip">Skip</button></div>
 <input type="file" id="photoIn" accept="image/*" hidden>
 <input type="file" id="progIn" accept="image/*" multiple hidden>
 
@@ -201,10 +248,11 @@
 // ---------- constants ----------
 const SDK_URL = "https://cdn.jsdelivr.net/npm/@anthropic-ai/sdk@0.128.0/+esm";
 const MODEL = "claude-opus-5-5";
-const PRICE_IN = 4 / 1e6, PRICE_OUT = 20 / 1e6;   // Claude Opus 5.5, dollars per token
+// Claude Opus 5.5, dollars per token: input, output, cache write, cache read
+const PRICE_IN = 4 / 1e6, PRICE_OUT = 20 / 1e6, PRICE_CACHE_W = 5 / 1e6, PRICE_CACHE_R = 0.2 / 1e6;
 const DEFAULT_REPO = "PerryIndustries/plate-data";
 const DEFAULTS = { cal: 2050, protein: 160, carbs: 215, fat: 60, stepsGoal: 9000, dayStart: 4, goalsU: 0,
-  apiKey: "", token: "", repo: DEFAULT_REPO, backupProgress: true };
+  apiKey: "", token: "", repo: DEFAULT_REPO, backupProgress: true, restTimer: true, writeNotes: true };
 // weight stays off the profile unless he turns it on: the profile is about showing up, not the scale
 const PROFILE_DEFAULT = { name: "Me", goal: 150, avatar: null, showWeight: false, u: 0 };
 const GOAL_KEYS = ["cal", "protein", "carbs", "fat", "stepsGoal", "dayStart"];
@@ -215,6 +263,22 @@ const STARTERS = [
   { title: "3 street tacos, double asada", sub: "corn tortillas, onion, cilantro, salsa", cal: 680, p: 52, c: 58, f: 24, fiber: 7 },
   { title: "Chipotle bowl, double chicken", sub: "white rice, black beans, fajita veg, salsa", cal: 745, p: 77, c: 70, f: 20, fiber: 12 },
   { title: "Protein shake", sub: "1 scoop with water", cal: 130, p: 25, c: 4, f: 2, fiber: 0 },
+];
+// Perry's 4-day apartment-gym split, seeded once as editable sessions. [name, sets, lo, hi, +lb when every set hits hi, rest s, note]
+// 0 lb means bodyweight; lo/hi 0 means no rep range. Compounds rest 150 s, isolation 75 s.
+const SPLIT = [
+  ["Upper A", [
+    ["Incline DB press 30°", 3, 6, 10, 5, 150], ["Smith flat press", 3, 8, 10, 10, 150, "or Nautilus chest press"], ["Lat pulldown", 3, 8, 12, 5, 150],
+    ["Cable lateral raise", 4, 12, 15, 5, 75, "per side"], ["Low-to-high cable fly", 3, 12, 15, 5, 75], ["Rope pushdown", 3, 10, 15, 5, 75], ["Face pull", 2, 15, 20, 5, 75]]],
+  ["Lower A", [
+    ["Smith squat", 3, 6, 10, 10, 150], ["Leg press", 3, 10, 15, 5, 150], ["DB RDL", 3, 8, 12, 5, 150], ["Bulgarian split squat", 2, 8, 12, 5, 150, "per leg"],
+    ["Calf raise", 3, 12, 15, 5, 75], ["Kneeling cable crunch", 3, 10, 15, 5, 75]]],
+  ["Upper B", [
+    ["Pull-ups", 3, 0, 0, 0, 150, "1-2 short of failure, bodyweight"], ["Seated cable row", 3, 8, 12, 5, 150], ["Incline Smith press", 3, 8, 10, 10, 150],
+    ["Seated DB shoulder press", 3, 8, 10, 5, 150], ["DB lateral raise", 3, 12, 20, 5, 75, "last set drop set"], ["Incline DB curl", 3, 10, 12, 5, 75], ["Face pull", 2, 15, 20, 5, 75]]],
+  ["Lower B", [
+    ["Smith RDL", 3, 6, 10, 10, 150], ["Leg press feet high/wide", 3, 10, 12, 5, 150], ["DB walking lunge", 2, 10, 10, 5, 150, "per leg"],
+    ["Stability-ball leg curl", 3, 10, 15, 0, 75], ["Calf raise", 3, 12, 15, 5, 75], ["Hanging knee raise", 3, 10, 15, 0, 75]]],
 ];
 
 const SYSTEM = `You estimate calories and macros for one meal in a personal food log. The person is a 22-year-old man, 5'8", about 160 lb, cutting fat while keeping protein high, so protein and calories matter most.
@@ -239,6 +303,38 @@ const SCHEMA = {
     note: { type: "string" },
   },
 };
+
+// ---------- talk: a private chat with Claude as a friend-mentor (same prompt as /talk on the PC) ----------
+// Nothing personal lives in this file (the repo is public): what Claude knows about him comes from the phone-only "About you" text and the notes file.
+const TALK_SYSTEM = `You are Perry's friend who is also a mentor. He opens this chat on his phone to think out loud about whatever is on his mind. Be warm first and honest always. Never clinical, never a lecture.
+
+What you know about him comes from the "About him" and "notes from past talks" sections below, written by him and by you after earlier talks. Keep it in mind without assuming, and use it the way a friend would ("last time you said X, is this the same feeling?"). Don't recite it.
+
+How to talk:
+- This is a text conversation on a phone. Write like a person texting a close friend who is wise: plain sentences, short paragraphs, no headers, no bullet lists, no bold, no "here's a breakdown". Match his length; short replies are fine.
+- Read the moment. If he's venting, mostly listen and reflect back. If he's stuck, ask what's underneath. If he wants a push, give one clear thing to try. If you're unsure, ask: "do you want me to just listen, or help you figure out what to do?"
+- One or two questions at a time, never a questionnaire.
+- Name patterns gently and tentatively ("I might be wrong, but it sounds like...").
+- Be honest. Don't just agree. If something he says doesn't add up, say so kindly.
+- If he works with a therapist, support that work; don't suggest therapy as if it's new, and don't try to replace it. Now and then "that might be a good one to bring to your therapist" is fine.
+- Use they/them for anyone whose pronouns he hasn't given.
+
+Safety: If he mentions self-harm, not wanting to be here, or being in danger: stay warm and present, take it seriously, ask directly how safe he is right now, and give the 988 Suicide & Crisis Lifeline (call or text 988 in the US). Encourage reaching his therapist or someone he trusts. Don't switch into a cold script. If he's scared for someone else's safety, the same 988 line also helps people worried about someone else, and if it's an emergency right now, 911.`;
+
+const NOTES_SYSTEM = `You keep Perry's private talk notes: short patterns and insights from his conversations with a friend-mentor, used to give the next conversation context. You get the current notes file and a conversation that just ended. Return the full updated notes file in "notes" and, in "summary", one short plain sentence telling Perry what you added or changed (or that nothing needed adding).
+
+Keep the file's title and every existing section and its order exactly as they are (the usual ones are "Patterns I've noticed", "Things I've learned about myself", "What helps", "Threads to come back to"; there may be others, such as a numbered playbook — keep those intact and only edit them if this talk clearly changed them). New dated lines go in the usual four sections. Each line starts with "- YYYY-MM-DD: " using the date of the talk. Use his own words where possible. Keep it short: no transcripts, no quotes longer than a few words, nothing he asked to keep out. Merge with existing lines (refine a line rather than adding a near-duplicate) and keep every existing line unless you are refining it. If nothing new came up, return the notes unchanged.`;
+
+// the shared file starts from this when there are no notes yet
+const NOTES_TEMPLATE = `# Talk notes (private, Perry's)
+
+## Patterns I've noticed
+## Things I've learned about myself
+## What helps
+## Threads to come back to
+`;
+const NOTES_SCHEMA = { type: "object", additionalProperties: false, required: ["notes", "summary"], properties: { notes: { type: "string" }, summary: { type: "string" } } };
+const REFUSAL_LINE = "I couldn't answer that one. If you're not safe right now, call or text 988.";
 
 // ---------- storage (IndexedDB, with an in-memory fallback so the app still opens in private mode) ----------
 let db = null;
@@ -265,7 +361,7 @@ const allKeys = () => db ? kv("readonly", (s) => s.getAllKeys()) : Promise.resol
 
 // ---------- state ----------
 const S = { settings: {}, favs: [], days: {}, steps: {}, meta: {}, draft: null, photos: new Map(),
-  posts: [], profile: {}, pdraft: null };
+  posts: [], profile: {}, pdraft: null, templates: [], workouts: [], wdraft: null, talks: [], talkNotes: {}, talkAbout: "" };
 
 async function load() {
   S.settings = Object.assign({}, DEFAULTS, (await get("settings")) || {});
@@ -277,6 +373,23 @@ async function load() {
   S.posts = (await get("posts")) || [];
   S.profile = Object.assign({}, PROFILE_DEFAULT, (await get("profile")) || {});
   S.pdraft = (await get("pdraft")) || null;
+  S.templates = (await get("templates")) || [];
+  S.workouts = (await get("workouts")) || [];
+  S.wdraft = (await get("wdraft")) || null;
+  // talks live on this phone only (never synced, never exported); the notes file is shared with the PC
+  S.talks = (await get("talks")) || [];
+  S.talkNotes = Object.assign({ text: "", sha: undefined, at: 0 }, (await get("talkNotes")) || {});
+  S.talkAbout = (await get("talkAbout")) || "";   // "About you": phone-only like the talks, never synced or exported
+  Object.assign(tdraft, (await get("tdraft")) || {});
+  if (!S.meta.liftSeeded) {
+    // u: 0 so a phone that already edited these sessions wins the merge over a fresh install's copy
+    const have = new Set(S.templates.map((t) => t.id));
+    S.templates = S.templates.concat(SPLIT.map(([name, exs], i) => ({ id: "split" + i, name, order: i, u: 0,
+      exercises: exs.map(([n, sets, lo, hi, inc, rest, note]) => ({ key: slug(n), name: n, sets, lo, hi, inc, rest, note: note || "" })) })).filter((t) => !have.has(t.id)));
+    S.meta.liftSeeded = 1;
+    await put("templates", S.templates);
+    await saveMeta();
+  }
   if (!S.meta.seeded) {
     const now = Date.now();
     S.favs = STARTERS.map((s, i) => ({ id: "starter" + i, title: s.title, sub: s.sub, items: [],
@@ -289,7 +402,19 @@ async function load() {
 const saveMeta = () => put("meta", S.meta);
 const saveSettings = () => put("settings", S.settings);
 let draftTimer = 0;
-function saveDraft() { clearTimeout(draftTimer); draftTimer = setTimeout(() => put("draft", S.draft), 300); }
+function saveDraft() { clearTimeout(draftTimer); draftTimer = setTimeout(() => { draftTimer = 0; put("draft", S.draft); }, 300); }
+let wdraftTimer = 0;
+function saveWdraft() { clearTimeout(wdraftTimer); wdraftTimer = setTimeout(() => { wdraftTimer = 0; put("wdraft", S.wdraft); }, 300); }
+let aboutTimer = 0;
+function saveAbout() { clearTimeout(aboutTimer); aboutTimer = setTimeout(() => { aboutTimer = 0; put("talkAbout", S.talkAbout); }, 400); }
+// the app is going to the background, where iOS may kill it: write whatever a debounce is still holding
+function flushDrafts() {
+  if (draftTimer) { clearTimeout(draftTimer); draftTimer = 0; put("draft", S.draft); }
+  if (wdraftTimer) { clearTimeout(wdraftTimer); wdraftTimer = 0; put("wdraft", S.wdraft); }
+  if (aboutTimer) { clearTimeout(aboutTimer); aboutTimer = 0; put("talkAbout", S.talkAbout); }
+  if (tplTimer) { clearTimeout(tplTimer); tplTimer = 0; put("templates", S.templates); scheduleSync(2000); }
+  put("tdraft", tdraft);
+}
 
 // ---------- helpers ----------
 const $ = (id) => document.getElementById(id);
@@ -412,12 +537,40 @@ async function loadImage(file) {
 
 // ---------- Claude ----------
 let sdk = null;
-async function estimate({ photo, text, previous, correction }) {
+async function claude() {
   const key = (S.settings.apiKey || "").trim();
   if (!key) throw new Error("Add your Claude API key in Settings first.");
-  if (!sdk) sdk = await import(SDK_URL);
-  const Anthropic = sdk.default;
-  const client = new Anthropic({ apiKey: key, dangerouslyAllowBrowser: true, maxRetries: 1 });
+  if (!sdk) sdk = await import(SDK_URL).catch(() => null);
+  if (!sdk) throw new Error("Couldn't load Claude's library. Check your signal and try again.");
+  return new sdk.default({ apiKey: key, dangerouslyAllowBrowser: true, maxRetries: 1 });
+}
+// the SDK's typed errors in plain words
+function claudeError(e) {
+  const A = sdk && sdk.default;
+  if (!A) return e;
+  if (e instanceof A.AuthenticationError) return new Error("Claude didn't accept the API key. Check it in Settings.");
+  if (e instanceof A.PermissionDeniedError) return new Error("This API key isn't allowed to use " + MODEL + ".");
+  if (e instanceof A.RateLimitError) return new Error("Too many requests or out of credit. Try again in a minute.");
+  if (e instanceof A.BadRequestError) return new Error("Claude couldn't read that: " + (e.error?.error?.message || e.message));
+  if (e instanceof A.APIConnectionError) return new Error("No connection to Claude. Check your signal and try again.");
+  if (e instanceof A.APIError) return new Error("Claude had a problem (" + (e.status || "error") + "). Try again.");
+  return e;
+}
+// dollars for one call at Opus 5.5 prices; also added to this month's total shown in Settings
+function countUsage(u) {
+  u = u || {};
+  const usd = (u.input_tokens || 0) * PRICE_IN + (u.output_tokens || 0) * PRICE_OUT + (u.cache_creation_input_tokens || 0) * PRICE_CACHE_W + (u.cache_read_input_tokens || 0) * PRICE_CACHE_R;
+  const month = ymd(new Date()).slice(0, 7);
+  const m = S.meta.usage[month] || { n: 0, usd: 0 };
+  m.n++;
+  m.usd += usd;
+  S.meta.usage[month] = m;
+  saveMeta();
+  return usd;
+}
+const textOf = (msg) => (msg.content || []).filter((b) => b.type === "text").map((b) => b.text).join("");
+async function estimate({ photo, text, previous, correction }) {
+  const client = await claude();
   const content = [];
   if (photo) content.push({ type: "image", source: { type: "base64", media_type: "image/jpeg", data: photo.split(",")[1] } });
   let ask = text ? "What I ate: " + text : "Estimate the meal in the photo.";
@@ -434,27 +587,13 @@ async function estimate({ photo, text, previous, correction }) {
       system: SYSTEM,
       messages: [{ role: "user", content }],
     });
-  } catch (e) {
-    if (e instanceof Anthropic.AuthenticationError) throw new Error("Claude didn't accept the API key. Check it in Settings.");
-    if (e instanceof Anthropic.PermissionDeniedError) throw new Error("This API key isn't allowed to use " + MODEL + ".");
-    if (e instanceof Anthropic.RateLimitError) throw new Error("Too many requests or out of credit. Try again in a minute.");
-    if (e instanceof Anthropic.BadRequestError) throw new Error("Claude couldn't read that: " + (e.error?.error?.message || e.message));
-    if (e instanceof Anthropic.APIConnectionError) throw new Error("No connection to Claude. Check your signal and try again.");
-    if (e instanceof Anthropic.APIError) throw new Error("Claude had a problem (" + (e.status || "error") + "). Try again.");
-    throw e;
-  }
-  const u = res.usage || {};
-  const month = ymd(new Date()).slice(0, 7);
-  const m = S.meta.usage[month] || { n: 0, usd: 0 };
-  m.n++;
-  m.usd += (u.input_tokens || 0) * PRICE_IN + (u.output_tokens || 0) * PRICE_OUT;
-  S.meta.usage[month] = m;
-  saveMeta();
+  } catch (e) { throw claudeError(e); }
+  countUsage(res.usage);
   if (res.stop_reason === "refusal") throw new Error("Claude declined this one. Type the food in instead.");
   if (res.stop_reason === "max_tokens") throw new Error("The answer got cut off. Try again.");
-  const block = res.content.find((b) => b.type === "text");
-  if (!block) throw new Error("Claude sent back nothing. Try again.");
-  return JSON.parse(block.text);
+  const out = textOf(res);
+  if (!out) throw new Error("Claude sent back nothing. Try again.");
+  return JSON.parse(out);
 }
 
 // ---------- GitHub backup + steps ----------
@@ -490,6 +629,24 @@ async function ghPut(path, b64, sha, message) {
   if (!r.ok) throw new Error("GitHub said " + r.status + " when saving");
   return true;
 }
+// raw text files (the talk notes are markdown, so ghGet's JSON.parse doesn't fit)
+async function ghGetText(path) {
+  const r = await gh(path);
+  if (r.status === 404) return [null, undefined];
+  if (!r.ok) throw new Error("GitHub said " + r.status);
+  const b = await r.json();
+  return [b64decode(b.content || ""), b.sha];
+}
+// the new sha when saved; null when the file changed first (read again and retry)
+async function ghPutText(path, text, sha, message) {
+  const body = { message: message || "sync", content: b64encode(text) };
+  if (sha) body.sha = sha;
+  const r = await gh(path, { method: "PUT", body: JSON.stringify(body) });
+  if (r.status === 409 || r.status === 422) return null;
+  if (!r.ok) throw new Error("GitHub said " + r.status + " when saving");
+  const b = await r.json().catch(() => ({}));
+  return (b.content && b.content.sha) || "";
+}
 async function ghList(path) {
   const r = await gh(path);
   if (r.status === 404) return [];
@@ -515,10 +672,13 @@ function mergeById(remote, local) {
   for (const x of local || []) map.set(x.id, newer(map.get(x.id), x));
   return [...map.values()].sort((a, b) => (a.id < b.id ? -1 : 1));
 }
+// undo of a soft delete, by id: a sync in between may have re-sorted the array, so an index would point at the wrong record
+const undelete = (arr, id) => arr.map((x) => (x.id === id ? Object.assign({}, x, { del: false, u: Date.now() }) : x));
 const mergeDay = (r, l) => ({ date: (r || l || {}).date, entries: mergeById((r || {}).entries, (l || {}).entries), steps: newer((r || {}).steps, (l || {}).steps) });
 const mergeFavs = (r, l) => ({ favs: mergeById((r || {}).favs, (l || {}).favs) });
 const mergeGoals = (r, l) => newer(r, l);
 const mergeProgress = (r, l) => ({ profile: newer((r || {}).profile, (l || {}).profile), posts: mergeById((r || {}).posts, (l || {}).posts) });
+const mergeLift = (r, l) => ({ templates: mergeById((r || {}).templates, (l || {}).templates), workouts: mergeById((r || {}).workouts, (l || {}).workouts) });
 // Merge one file with our copy and write it back when we add anything.
 async function syncFile(path, local, merge) {
   for (let attempt = 0; attempt < 3; attempt++) {
@@ -530,7 +690,7 @@ async function syncFile(path, local, merge) {
   throw new Error("the backup kept changing; will try again shortly");
 }
 
-let syncTimer = 0, syncing = false;
+let syncTimer = 0, syncing = false, syncAgain = null;   // syncAgain: a sync was asked for while one was running; it runs once this one is done
 S.syncStatus = "";
 function scheduleSync(ms) {
   if (!syncOn()) return;
@@ -538,7 +698,8 @@ function scheduleSync(ms) {
   syncTimer = setTimeout(() => syncNow(), ms);
 }
 async function syncNow({ full = false } = {}) {
-  if (!syncOn() || syncing) return;
+  if (!syncOn()) return;
+  if (syncing) { syncAgain = { full: full || !!(syncAgain && syncAgain.full) }; return; }
   syncing = true;
   setSyncStatus("Backing up…");
   try {
@@ -551,17 +712,26 @@ async function syncNow({ full = false } = {}) {
       S.settings.goalsU = g.u;
       await saveSettings();
     }
+    // Each file's merged copy is merged once more with what's here now, so anything saved while that upload ran isn't lost (newer u wins).
     // saved meals
     const f = await syncFile("favorites.json", { favs: S.favs }, mergeFavs);
-    S.favs = f.favs;
+    S.favs = mergeById(f.favs, S.favs);
     await put("favs", S.favs);
     // progress profile and posts (the photos themselves go up through photoQueue)
     const pr = await syncFile("progress.json", { profile: S.profile, posts: S.posts }, mergeProgress);
     if (pr) {
-      S.posts = pr.posts || [];
-      if (pr.profile) S.profile = Object.assign({}, PROFILE_DEFAULT, pr.profile);
+      S.posts = mergeById(pr.posts, S.posts);
+      S.profile = Object.assign({}, PROFILE_DEFAULT, newer(pr.profile, S.profile) || {});
       await put("posts", S.posts);
       await put("profile", S.profile);
+    }
+    // workout sessions and the log
+    const wk = await syncFile("workouts.json", { templates: S.templates, workouts: S.workouts }, mergeLift);
+    if (wk) {
+      S.templates = mergeById(wk.templates, S.templates);
+      S.workouts = mergeById(wk.workouts, S.workouts);
+      await put("templates", S.templates);
+      await put("workouts", S.workouts);
     }
     // days: everything changed here, plus the last two days in case another device logged something
     const dates = new Set([...S.meta.dirty, today(), shiftDay(today(), -1)]);
@@ -569,9 +739,12 @@ async function syncNow({ full = false } = {}) {
       for (const it of await ghList("days")) { const m = /^(\d{4}-\d{2}-\d{2})\.json$/.exec(it.name); if (m) dates.add(m[1]); }
     }
     for (const date of dates) {
-      const merged = await syncFile("days/" + date + ".json", S.days[date] || null, mergeDay);
+      const before = S.days[date] || null;
+      let merged = await syncFile("days/" + date + ".json", before, mergeDay);
+      const touched = (S.days[date] || null) !== before;   // food logged here while this file was going up: keep it, and keep the day dirty
+      if (touched) merged = Object.assign(mergeDay(merged, S.days[date]), { date });
       if (merged && (merged.entries.length || merged.steps)) { S.days[date] = merged; await put("day:" + date, merged); }
-      S.meta.dirty = S.meta.dirty.filter((d) => d !== date);
+      if (!touched) S.meta.dirty = S.meta.dirty.filter((d) => d !== date);
     }
     S.meta.restored = 1;
     // photos that haven't gone up yet
@@ -585,10 +758,17 @@ async function syncNow({ full = false } = {}) {
     S.meta.lastSync = Date.now();
     await saveMeta();
     setSyncStatus("Backed up " + new Date().toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }));
-    if (["today", "history", "me"].includes(route().name)) render();
+    // not the live logger or the session editor, and never while he's typing: a re-render would drop the keyboard
+    const a = document.activeElement, typing = !!a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName) && view.contains(a);
+    if (["today", "history", "me", "lift"].includes(route().name) && !["go", "templates"].includes(route().args[0]) && !typing) render();
   } catch (e) {
     setSyncStatus("Backup failed: " + e.message, true);
-  } finally { syncing = false; }
+  } finally {
+    syncing = false;
+    const again = syncAgain;
+    syncAgain = null;
+    if (again) setTimeout(() => syncNow(again), 1000);
+  }
 }
 // The iPhone Shortcut writes steps/<date>_<steps>_<time>.json, so the file names alone carry the numbers.
 async function pullSteps() {
@@ -621,15 +801,23 @@ function route() {
 window.addEventListener("hashchange", () => { window.scrollTo(0, 0); render(); });
 function go(hash) { if (location.hash === hash) render(); else location.hash = hash; }
 
+let lastRoute = null;
 function render() {
   const r = route();
   const tab = { today: "today", day: "today", history: "history", add: "add", review: "add", edit: "today", favorites: "add", settings: "settings",
-    me: "me", post: "me", newpost: "me", compare: "me" }[r.name] || "today";
+    me: "me", post: "me", newpost: "me", compare: "me", lift: "today", talk: "me" }[r.name] || "today";
   document.querySelectorAll("#tabs a").forEach((a) => a.classList.toggle("on", a.dataset.tab === tab));
   const fn = { today: viewDay, day: viewDay, add: viewAdd, review: viewReview, edit: viewReview, history: viewHistory, favorites: viewFavs, settings: viewSettings,
-    me: viewMe, post: viewPost, newpost: viewNewPost, compare: viewCompare }[r.name] || viewDay;
+    me: viewMe, post: viewPost, newpost: viewNewPost, compare: viewCompare, lift: viewLift, talk: viewTalk }[r.name] || viewDay;
+  const chat = r.name === "talk" && !!r.args[0];
+  view.classList.toggle("talk", chat);
   view.innerHTML = fn(r);
   hydratePhotos();
+  if (chat) window.scrollTo(0, document.body.scrollHeight);
+  // leaving a chat with unsaved replies: offer the notes once, without blocking
+  const prev = lastRoute;
+  lastRoute = r;
+  if (prev && prev.name === "talk" && prev.args[0] && !(chat && r.args[0] === prev.args[0])) offerWrap(prev.args[0]);
 }
 
 // ---------- views ----------
@@ -675,7 +863,7 @@ function viewDay(r) {
     <div class="bar"><i style="width:${stepPct}%;background:var(--accent)"></i></div>
     <div id="stepsEdit"></div>
   </div>
-  ${isToday ? progressNudge() : ""}
+  ${isToday ? liftCard() + progressNudge() : ""}
   <div class="card">
     <div class="spread"><span><b>Food</b>${isToday && logStreak() >= 2 ? ` <span class="small ok">🔥 ${logStreak()} days in a row</span>` : ""}</span><a class="small" href="#/add/${date}">+ Add</a></div>
     ${entries.length ? entries.map((e) => `
@@ -704,7 +892,7 @@ function viewAdd(r) {
   <button class="btn ghost block" data-act="manual" data-d="${date}">Type the numbers myself</button>
   ${favs.length ? `<h2>Saved meals · one tap logs it</h2><div class="favs">${favs.map((f) => `
     <button class="fav" data-act="logFav" data-id="${f.id}" data-d="${date}"><b>${h(f.title)}</b><span>${fmt(f.cal)} cal · ${fmt(f.p)}g protein</span></button>`).join("")}</div>` : ""}
-  <p style="text-align:center"><a class="small" href="#/favorites">Edit saved meals</a></p>`;
+  <p style="text-align:center"><a class="small" href="#/favorites">Edit saved meals</a> <span class="dim small">·</span> <a class="small" href="#/lift">Start workout</a></p>`;
 }
 
 function draftTotals(d) {
@@ -840,7 +1028,7 @@ function viewSettings() {
   <h2>Claude (photo estimates)</h2>
   <div class="card">
     <label class="field"><span>Anthropic API key</span><input type="password" autocomplete="off" data-set="apiKey" placeholder="sk-ant-…" value="${h(s.apiKey)}"></label>
-    <p class="small dim" style="margin:0">Stays on this phone only and is never backed up. Get one at console.anthropic.com → API Keys. Estimates use ${MODEL}; this month: ${use ? use.n + " estimates, about $" + use.usd.toFixed(2) : "none yet"}.</p>
+    <p class="small dim" style="margin:0">Stays on this phone only and is never backed up. Get one at console.anthropic.com → API Keys. Food estimates and <a href="#/talk">Talk</a> use ${MODEL}; this month: ${use ? use.n + " Claude call" + (use.n === 1 ? "" : "s") + ", about $" + use.usd.toFixed(2) : "none yet"}.</p>
   </div>
 
   <h2>Backup</h2>
@@ -906,6 +1094,7 @@ function heatmap() {
   const t = today(), dow = (new Date(t + "T12:00:00").getDay() + 6) % 7;   // 0 = Monday
   const start = shiftDay(t, -dow - 7 * 11);
   const posted = new Set(livePosts().map((p) => p.date));
+  const lifted = new Set(liveWorkouts().map((w) => w.date));
   let cells = "", marks = "";
   for (let w = 0; w < 12; w++) {
     let week = false;
@@ -913,7 +1102,7 @@ function heatmap() {
       const d = shiftDay(start, w * 7 + r);
       if (posted.has(d)) week = true;
       const cls = d > t ? "f" : proteinDay(d) ? "l2" : loggedDay(d) ? "l1" : "";
-      cells += `<i class="${cls}" title="${d}"></i>`;
+      cells += `<i class="${cls}${lifted.has(d) ? " lift" : ""}" title="${d}"></i>`;
     }
     marks += `<span>${week ? "●" : ""}</span>`;
   }
@@ -937,6 +1126,7 @@ function viewMe() {
   const st = progressStats(), p = S.profile, ps = st.ps.slice().reverse();
   const last30 = Array.from({ length: 30 }, (_, i) => shiftDay(today(), -i));
   const logged30 = last30.filter(loggedDay).length, protein30 = last30.filter(proteinDay).length;
+  const ws = liveWorkouts(), lifted7 = ws.filter((w) => last30.slice(0, 7).includes(w.date)).length, lifted30 = ws.filter((w) => last30.includes(w.date)).length;
   const start = st.first ? st.first.weight : null, cur = st.last ? st.last.weight : null;
   const pct = start && cur && start > p.goal ? Math.max(0, Math.min(100, ((start - cur) / (start - p.goal)) * 100)) : 0;
   return `
@@ -952,11 +1142,13 @@ function viewMe() {
     </div>
   </div>
   <div id="profEdit"></div>
+  <a class="btn block" href="#/talk" style="margin-bottom:12px;justify-content:space-between"><span>💬 Talk</span><span class="dim small" style="font-weight:400">a private chat with Claude ›</span></a>
   <div class="card">
     <div class="spread small" style="margin-bottom:10px"><b>Consistency</b><span class="dim">last 12 weeks</span></div>
     ${heatmap()}
     <p class="small" style="margin:10px 0 0">Logged food <b>${logged30}</b> of the last 30 days · hit protein on <b>${protein30}</b>.</p>
-    <div class="row small dim" style="margin-top:6px;gap:12px"><span><i class="key l1"></i> logged</span><span><i class="key l2"></i> hit protein</span><span><span style="color:var(--accent)">●</span> check-in week</span></div>
+    <p class="small" style="margin:4px 0 0">${ws.length ? `Lifted <b>${lifted7}</b> time${lifted7 === 1 ? "" : "s"} this week · <b>${lifted30}</b> in the last 30 days.` : `No workouts yet. <a href="#/lift">Start one</a>.`}</p>
+    <div class="row small dim" style="margin-top:6px;gap:12px;flex-wrap:wrap"><span><i class="key l1"></i> logged</span><span><i class="key l2"></i> hit protein</span><span><i class="key lift"></i> lifted</span><span><span style="color:var(--accent)">●</span> check-in week</span></div>
   </div>
   ${p.showWeight && start ? `<div class="card">
     <div class="spread small"><span class="dim">Start ${lb(start)}</span><span><b>${lb(cur)} lb</b> now</span><span class="dim">Goal ${lb(p.goal)}</span></div>
@@ -1031,8 +1223,537 @@ function viewNewPost() {
 }
 const savePdraft = () => put("pdraft", S.pdraft);
 
+// ---------- workout log (4-day split, double progression) ----------
+// exercise keys are slugs shared across sessions, so both "Face pull"s have one history
+const slug = (s) => String(s || "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+const liveTemplates = () => S.templates.filter((t) => !t.del).sort((a, b) => (a.order || 0) - (b.order || 0));
+const liveWorkouts = () => S.workouts.filter((w) => !w.del && w.endedAt).sort((a, b) => (a.endedAt || 0) - (b.endedAt || 0));   // finished, oldest first
+const doneSets = (ex) => ex.sets.filter((s) => s.done);
+const setsDone = (w) => w.exercises.reduce((a, ex) => a + doneSets(ex).length, 0);
+const mins = (w) => Math.max(1, Math.round(((w.endedAt || Date.now()) - w.startedAt) / 60e3));
+const setStr = (s) => (s.w > 0 ? lb(s.w) : "BW") + "×" + (+s.r || 0);
+const setsStr = (sets, sep) => sets.map(setStr).join(sep || ", ");
+const target = (n, ex) => n + " × " + (ex.hi > 0 ? (+ex.lo === +ex.hi ? ex.hi : ex.lo + "-" + ex.hi) : "near failure");
+const incLabel = (ex) => (/\bdb\b|dumbbell/i.test(ex.name) ? "dumbbells" : /smith/i.test(ex.name) ? "Smith" : "stack");
+const restFor = (key) => (liveTemplates().flatMap((t) => t.exercises).find((e) => e.key === key) || {}).rest || 90;
+// the session after the last finished workout's, in split order; the first when nothing's been done yet
+function nextTemplate() {
+  const ts = liveTemplates(), ws = liveWorkouts(), last = ws[ws.length - 1];
+  const i = last ? ts.findIndex((t) => t.id === last.templateId) : -1;
+  return ts[(i + 1) % ts.length] || null;
+}
+// the most recent finished workout where this exercise got done, skipping the one being edited
+function lastFor(key, skipId) {
+  const ws = liveWorkouts();
+  for (let i = ws.length - 1; i >= 0; i--) {
+    if (ws[i].id === skipId) continue;
+    const ex = ws[i].exercises.find((x) => x.key === key && doneSets(x).length);
+    if (ex) return { date: ws[i].date, sets: doneSets(ex) };
+  }
+  return null;
+}
+// double progression: every set reached the top of the range last time, so add the exercise's increment
+function suggest(ex, last) {
+  if (!(ex.inc > 0) || !(ex.hi > 0) || !last) return 0;
+  const top = Math.max(...last.sets.map((s) => +s.w || 0));
+  return top > 0 && last.sets.every((s) => +s.r >= +ex.hi) ? top + +ex.inc : 0;
+}
+function exerciseKeys() {
+  const m = new Map();
+  for (const w of liveWorkouts()) for (const ex of w.exercises) if (doneSets(ex).length) {
+    const k = m.get(ex.key) || { key: ex.key, name: ex.name, n: 0 };
+    k.name = ex.name; k.n++; m.set(ex.key, k);
+  }
+  return [...m.values()].sort((a, b) => a.name.localeCompare(b.name));
+}
+function startWorkout(t) {
+  const d = { id: uid(), date: today(), templateId: t.id, name: t.name, startedAt: Date.now(), note: "", restEnd: null,
+    exercises: t.exercises.filter((e) => e.key && e.name).map((e) => {
+      const last = lastFor(e.key), sug = suggest(e, last);
+      return { key: e.key, name: e.name, lo: +e.lo || 0, hi: +e.hi || 0, inc: +e.inc || 0, rest: +e.rest || 90, note: e.note || "",
+        // prefill from last time's same set; with a progression nudge, the new weight and the bottom of the range
+        sets: Array.from({ length: +e.sets || 3 }, (_, i) => {
+          const ls = last && (last.sets[i] || last.sets[last.sets.length - 1]);
+          return { w: sug || (ls ? ls.w ?? "" : ""), r: sug ? e.lo || "" : ls ? ls.r : "", done: false };
+        }) };
+    }) };
+  S.wdraft = d;
+  put("wdraft", d);
+  go("#/lift/go");
+}
+
+// rest timer: the draft stores the END time, never a counter, so a locked phone comes back showing the right number
+let restTick = 0, ac = null;
+function audioInit() {
+  try { ac = ac || new (window.AudioContext || window.webkitAudioContext)(); if (ac.state !== "running") ac.resume(); } catch { ac = null; }   // iOS also leaves it "interrupted" after a lock
+}
+function restDone() {
+  try { navigator.vibrate?.([200, 100, 200]); } catch { /* not every browser */ }
+  if (!ac) return;
+  try {
+    for (const t0 of [0, 0.25]) {
+      const o = ac.createOscillator(), g = ac.createGain();
+      o.connect(g); g.connect(ac.destination);
+      o.frequency.value = 880;
+      g.gain.setValueAtTime(0.25, ac.currentTime + t0);
+      g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + t0 + 0.18);
+      o.start(ac.currentTime + t0); o.stop(ac.currentTime + t0 + 0.2);
+    }
+  } catch { /* sound is a nicety */ }
+}
+function restBar() {
+  const d = S.wdraft, el = $("rest");
+  const on = !!(d && d.restEnd && S.settings.restTimer !== false);
+  const left = on ? Math.ceil((d.restEnd - Date.now()) / 1000) : 0;
+  if (on && left <= 0) { d.restEnd = null; put("wdraft", d); if (left > -5) restDone(); }   // long past (the phone was locked): no late beep
+  const show = on && left > 0;
+  el.hidden = !show;
+  document.body.classList.toggle("resting", show);
+  if (show) $("restLeft").textContent = Math.floor(left / 60) + ":" + pad(left % 60);
+  if (show && !restTick) restTick = setInterval(restBar, 500);
+  if (!show && restTick) { clearInterval(restTick); restTick = 0; }
+}
+
+function liftCard() {
+  const d = S.wdraft;
+  if (d) return `<a class="card" href="#/lift/go" style="display:block;text-decoration:none;color:var(--text)"><div class="spread"><span><b>Workout in progress</b><span class="dim"> · ${h(d.name)}</span></span><span class="small" style="color:var(--accent)">resume ›</span></div></a>`;
+  const w = liveWorkouts().filter((x) => x.date === today()).pop();
+  if (w) return `<div class="card spread"><span><b>Lifted today ✓</b><span class="dim"> ${h(w.name)} · ${setsDone(w)} sets</span></span><a class="small" href="#/lift/w/${w.id}">view</a></div>`;
+  const nt = nextTemplate();
+  return `<div class="card"><div class="spread"><b>Lift</b><a class="small" href="#/lift">other session / history</a></div>
+    ${nt ? `<button class="btn primary block" style="margin-top:10px" data-act="startW" data-id="${nt.id}">Start ${h(nt.name)}</button>` : `<p class="small dim" style="margin:6px 0 0">No sessions set up yet.</p>`}</div>`;
+}
+
+function viewLift(r) {
+  const sub = r.args[0];
+  return sub === "go" ? viewLogger() : sub === "w" ? viewWorkout(r) : sub === "ex" ? viewExercise(r) : sub === "templates" ? viewTemplates() : viewLiftHome();
+}
+function viewLiftHome() {
+  const ts = liveTemplates(), next = nextTemplate(), ws = liveWorkouts().reverse().slice(0, 15), d = S.wdraft, keys = exerciseKeys();
+  return `
+  <h1>Lift</h1>
+  ${d ? `<a class="card nudge" href="#/lift/go" style="display:block;text-decoration:none;color:var(--text)"><b>Workout in progress · ${h(d.name)}</b><div class="small dim">${setsDone(d)} sets done · tap to resume</div></a>` : ""}
+  ${next ? `<div class="card"><div class="small dim">Next up</div><button class="btn primary block" style="margin:8px 0" data-act="startW" data-id="${next.id}">Start ${h(next.name)}</button>
+      <div class="small dim">${next.exercises.length} exercises · ${h(next.exercises.map((e) => e.name).join(", "))}</div></div>` : `<div class="card">No sessions yet. <a href="#/lift/templates">Add one</a>.</div>`}
+  <div class="favs">${ts.filter((t) => t !== next).map((t) => `<button class="fav" data-act="startW" data-id="${t.id}"><b>${h(t.name)}</b><span>${t.exercises.length} exercises</span></button>`).join("")}</div>
+  <h2>Recent workouts</h2>
+  <div class="card">${ws.length ? ws.map((w) => `<a class="wrow" href="#/lift/w/${w.id}"><span class="dim">${h(shortMD(w.date))}</span><b>${h(w.name)}</b><span class="dim small">${setsDone(w)} sets · ${mins(w)} min</span></a>`).join("")
+    : `<p class="dim small" style="margin:0">Nothing yet. Your first session is one tap up there.</p>`}</div>
+  <h2>Exercises</h2>
+  <div class="card">${keys.length ? keys.map((k) => `<a class="wrow two" href="#/lift/ex/${h(k.key)}"><b>${h(k.name)}</b><span class="dim small">${k.n} session${k.n === 1 ? "" : "s"}</span></a>`).join("")
+    : `<p class="dim small" style="margin:0">Per-exercise history shows up here after your first workout.</p>`}</div>
+  <p style="text-align:center"><a class="small" href="#/lift/templates">Edit sessions</a></p>`;
+}
+
+function viewLogger() {
+  const d = S.wdraft;
+  if (!d) {
+    const t = nextTemplate();
+    return `<h1>Lift</h1><p class="dim">No workout in progress.</p>${t ? `<button class="btn primary block" data-act="startW" data-id="${t.id}">Start ${h(t.name)}</button>` : ""}<p style="text-align:center"><a class="small" href="#/lift">All sessions</a></p>`;
+  }
+  const n = setsDone(d), on = S.settings.restTimer !== false;
+  return `
+  <div class="spread" style="margin:4px 0 10px"><b style="font-size:20px">${h(d.name)}</b><span class="dim small">${d.editing ? "editing · " + h(shortMD(d.date)) : "started " + new Date(d.startedAt).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}</span></div>
+  ${d.exercises.map((ex, i) => {
+    const last = lastFor(ex.key, d.id), sug = suggest(ex, last), bw = !(ex.inc > 0);
+    return `<div class="card ex">
+      <div class="spread"><b><a href="#/lift/ex/${h(ex.key)}" style="color:inherit;text-decoration:none">${h(ex.name)}</a></b><span class="dim small">${target(ex.sets.length, ex)}</span></div>
+      ${ex.note ? `<div class="small dim">${h(ex.note)}</div>` : ""}
+      <div class="last">${last ? `Last · ${h(shortMD(last.date))}: ${h(setsStr(last.sets))}` : "First time · no history yet"}</div>
+      ${sug ? `<div class="small ok" style="margin:-4px 0 8px">All sets hit ${ex.hi} last time → try ${lb(sug)} lb (+${lb(ex.inc)} lb ${incLabel(ex)})</div>` : ""}
+      ${ex.sets.map((s, j) => `<div class="setrow${s.done ? " done" : ""}"><span class="n">${j + 1}</span>
+        <input type="number" inputmode="decimal" step="any" placeholder="${bw ? "BW" : "lb"}" data-wb="w" data-i="${i}" data-j="${j}" value="${h(s.w ?? "")}" aria-label="Weight">
+        <span class="times">×</span>
+        <input type="number" inputmode="numeric" placeholder="reps" data-wb="r" data-i="${i}" data-j="${j}" value="${h(s.r ?? "")}" aria-label="Reps">
+        <button class="tick" data-act="tick" data-i="${i}" data-j="${j}" aria-label="Set ${j + 1} done">✓</button></div>`).join("")}
+      <div class="row" style="margin-top:4px"><button class="btn ghost small" style="min-height:40px;padding:6px 10px" data-act="addSet" data-i="${i}">+ set</button>
+        ${ex.sets.length > 1 ? `<button class="btn ghost small" style="min-height:40px;padding:6px 10px" data-act="dropSet" data-i="${i}">− set</button>` : ""}</div>
+    </div>`; }).join("")}
+  <div class="card">
+    <label class="field" style="margin:0"><span>Note (optional)</span><textarea data-wb="note" placeholder="How it went, what to change next time">${h(d.note || "")}</textarea></label>
+    <label class="check" style="margin-top:8px"><input type="checkbox" data-set="restTimer" ${on ? "checked" : ""}><span>Rest timer after each ✓<span class="dim small"> · keeps counting while the phone is locked</span></span></label>
+  </div>
+  <button class="btn primary block" id="finishW" data-act="finishW">${d.editing ? "Save changes" : "Finish workout"} · ${n} set${n === 1 ? "" : "s"}</button>
+  <button class="btn danger block" style="margin-top:8px" data-act="discardW">${d.editing ? "Discard changes" : "Discard workout"}</button>`;
+}
+
+function viewWorkout(r) {
+  const w = S.workouts.find((x) => x.id === r.args[1] && !x.del);
+  if (!w) return `<p class="dim">That workout is gone. <a href="#/lift">Back to Lift</a></p>`;
+  return `
+  <div class="spread" style="margin:4px 0 10px"><a href="#/lift" class="small">‹ Lift</a><span class="dim small">${h(longDate(w.date))}</span></div>
+  <div class="card"><div class="spread"><b style="font-size:18px">${h(w.name)}</b><span class="small dim">${setsDone(w)} sets · ${mins(w)} min</span></div>
+    ${w.note ? `<p class="small" style="margin:8px 0 0;white-space:pre-wrap">${h(w.note)}</p>` : ""}</div>
+  <div class="card">${w.exercises.map((ex) => `<div class="item"><div class="info"><b><a href="#/lift/ex/${h(ex.key)}" style="color:inherit;text-decoration:none">${h(ex.name)}</a></b>
+    <div class="small dim">${doneSets(ex).length ? h(setsStr(doneSets(ex), " · ")) : "skipped"}</div></div></div>`).join("")}</div>
+  <div class="row"><button class="btn" style="flex:1" data-act="editW" data-id="${w.id}">Edit</button><button class="btn danger" style="flex:1" data-act="deleteW" data-id="${w.id}">Delete</button></div>`;
+}
+
+function chart(pts) {
+  const W = 320, H = 110, P = 10, L = 34, n = pts.length, vs = pts.map((p) => p.v);
+  const lo = Math.min(...vs), hi = Math.max(...vs);
+  const x = (i) => (n > 1 ? L + (i * (W - L - P)) / (n - 1) : (W + L) / 2);
+  const y = (v) => (hi === lo ? H / 2 : H - P - ((v - lo) * (H - 2 * P)) / (hi - lo));
+  return `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Heaviest set per session">
+    <text x="2" y="${P + 4}" fill="var(--dim)" font-size="11">${lb(hi)}</text>
+    ${hi !== lo ? `<text x="2" y="${H - P + 4}" fill="var(--dim)" font-size="11">${lb(lo)}</text>` : ""}
+    <polyline fill="none" stroke="var(--protein)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" points="${pts.map((p, i) => x(i).toFixed(1) + "," + y(p.v).toFixed(1)).join(" ")}"/>
+    ${pts.map((p, i) => `<circle cx="${x(i).toFixed(1)}" cy="${y(p.v).toFixed(1)}" r="4" fill="var(--protein)"><title>${h(p.label)}: ${lb(p.v)}</title></circle>`).join("")}
+  </svg>`;
+}
+function viewExercise(r) {
+  const key = r.args[1];
+  if (!key) {
+    const keys = exerciseKeys();
+    return `<div class="spread" style="margin:4px 0 10px"><a href="#/lift" class="small">‹ Lift</a></div><h1 style="margin-top:0">Exercises</h1>
+    <div class="card">${keys.length ? keys.map((k) => `<a class="wrow two" href="#/lift/ex/${h(k.key)}"><b>${h(k.name)}</b><span class="dim small">${k.n} session${k.n === 1 ? "" : "s"}</span></a>`).join("") : `<p class="dim small" style="margin:0">Nothing logged yet.</p>`}</div>`;
+  }
+  const ws = liveWorkouts().map((w) => ({ w, ex: w.exercises.find((x) => x.key === key && doneSets(x).length) })).filter((x) => x.ex);
+  const name = ws.length ? ws[ws.length - 1].ex.name : (liveTemplates().flatMap((t) => t.exercises).find((e) => e.key === key) || { name: key }).name;
+  const recent = ws.slice(-12);
+  // bodyweight moves have no weight to chart, so chart the best set's reps instead
+  const weighted = recent.some((x) => doneSets(x.ex).some((s) => s.w > 0));
+  const pts = recent.map((x) => ({ label: shortMD(x.w.date), v: Math.max(...doneSets(x.ex).map((s) => +(weighted ? s.w : s.r) || 0)) }));
+  return `
+  <div class="spread" style="margin:4px 0 10px"><a href="#/lift" class="small">‹ Lift</a><span class="dim small">${ws.length} session${ws.length === 1 ? "" : "s"}</span></div>
+  <h1 style="margin-top:0">${h(name)}</h1>
+  ${ws.length ? `<div class="card"><div class="small dim" style="margin-bottom:6px">${weighted ? "Heaviest set, lb" : "Most reps in a set"} · last ${recent.length} session${recent.length === 1 ? "" : "s"}</div>${chart(pts)}
+      <div class="spread small dim"><span>${h(pts[0].label)}</span><span>${pts.length > 1 ? h(pts[pts.length - 1].label) : ""}</span></div></div>
+    <div class="card">${ws.slice().reverse().map((x) => `<a class="wrow" href="#/lift/w/${x.w.id}"><span class="dim">${h(shortMD(x.w.date))}</span><span>${h(setsStr(doneSets(x.ex), " · "))}</span><span class="dim small">${h(x.w.name)}</span></a>`).join("")}</div>`
+    : `<p class="dim">No sessions logged with this exercise yet.</p>`}`;
+}
+
+const freshEx = new WeakSet();   // exercises added this visit: the key follows the name until the page is left; renames later keep it
+let tplTimer = 0;
+function saveTemplates(t) {   // every save bumps u, so the other phone takes this copy
+  if (t) t.u = Date.now();
+  clearTimeout(tplTimer);
+  tplTimer = setTimeout(async () => { tplTimer = 0; await put("templates", S.templates); scheduleSync(2000); }, 400);
+}
+function viewTemplates() {
+  const ts = liveTemplates();
+  const num = (t, i, k, label, step) => `<label><span>${label}</span><input type="number" inputmode="${step ? "decimal" : "numeric"}" ${step ? `step="${step}"` : ""} data-tb="${k}" data-t="${t.id}" data-i="${i}" value="${h(t.exercises[i][k] ?? "")}" aria-label="${label}"></label>`;
+  return `
+  <div class="spread" style="margin:4px 0 10px"><a href="#/lift" class="small">‹ Lift</a><span class="dim small">changes save as you type</span></div>
+  <h1 style="margin-top:0">Sessions</h1>
+  ${ts.map((t) => `<div class="card tpl">
+    <div class="row" style="margin-bottom:6px"><input type="text" data-tb="tname" data-t="${t.id}" value="${h(t.name)}" aria-label="Session name"><button class="x" data-act="dropTpl" data-id="${t.id}" aria-label="Delete ${h(t.name)}">×</button></div>
+    ${t.exercises.map((e, i) => `<div class="tex">
+      <div class="trow"><input type="text" data-tb="name" data-t="${t.id}" data-i="${i}" value="${h(e.name)}" placeholder="Exercise" aria-label="Exercise name">
+        <button class="x" data-act="moveEx" data-t="${t.id}" data-i="${i}" data-d="-1" ${i ? "" : "disabled"} aria-label="Move up">↑</button>
+        <button class="x" data-act="moveEx" data-t="${t.id}" data-i="${i}" data-d="1" ${i < t.exercises.length - 1 ? "" : "disabled"} aria-label="Move down">↓</button>
+        <button class="x" data-act="dropEx" data-t="${t.id}" data-i="${i}" aria-label="Remove ${h(e.name)}">×</button></div>
+      <div class="tnums">${num(t, i, "sets", "Sets")}${num(t, i, "lo", "Low")}${num(t, i, "hi", "High")}${num(t, i, "inc", "+lb", "0.5")}${num(t, i, "rest", "Rest s")}</div>
+      <input type="text" data-tb="note" data-t="${t.id}" data-i="${i}" value="${h(e.note || "")}" placeholder="Note (optional)" aria-label="Note" style="margin-top:6px;font-size:14px;padding:9px 12px">
+    </div>`).join("")}
+    <button class="btn ghost block" data-act="addEx" data-t="${t.id}">+ Exercise</button>
+  </div>`).join("")}
+  <button class="btn block" data-act="newTpl">+ New session</button>
+  <p class="small dim">Low and High are the rep range; +lb is what to add once every set hits High (0 for bodyweight, which also turns off the nudge). Rest is in seconds. Sessions rotate in this order.</p>`;
+}
+
+// ---------- talk (conversations stay on this phone; the notes file is shared with /talk on the PC) ----------
+const saveTalks = () => put("talks", S.talks);
+// notes shown in the chat never go to Claude, and neither does a turn Claude refused (it would just be refused again on every turn after)
+const apiMsgs = (t) => t.messages.filter((m) => (m.role === "user" || m.role === "assistant") && !m.refused);
+const money = (usd) => (usd >= 1 ? "$" + usd.toFixed(2) : usd < 0.005 ? "<1¢" : Math.round(usd * 100) + "¢");
+const talkTitle = (s) => { const w = s.trim().split(/\s+/); let t = w[0].slice(0, 40); for (const x of w.slice(1)) { if (t.length + 1 + x.length > 40) break; t += " " + x; } return t; };
+// the About text and the notes are frozen on the talk at its first message, so the system prompt (and its cache) stays byte-identical all conversation
+const talkSystem = (t) => TALK_SYSTEM + (t.about ? "\n\nAbout him (written by him):\n\n" + t.about : "")
+  + (t.notes ? "\n\nYour notes from past talks with him (from his PC and his phone):\n\n" + t.notes : "\n\nNo notes from past talks yet.");
+let live = null;        // the reply being streamed: { id, text, busy, err }
+let sending = false;    // between the Send tap and the stream starting, so a double tap can't send twice
+let wrapping = null;    // id of the talk whose notes are being written
+const tdraft = {};      // typed-but-unsent text per talk, so a re-render mid-stream doesn't eat it; written to the phone when the app goes to the background
+const onTalk = (id) => { const r = route(); return r.name === "talk" && r.args[0] === id; };
+// re-render the open chat without losing the keyboard: if the composer had focus it gets it back, caret at the end
+function renderIfTalk(id) {
+  if (!onTalk(id)) return;
+  const had = document.activeElement && document.activeElement.id === "talkIn";
+  render();
+  const ta = had && $("talkIn");
+  if (ta) { ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length); }
+}
+function liveDraw(L) {
+  const el = live === L && $("live");
+  if (!el) return;
+  const nearBottom = window.innerHeight + window.scrollY >= document.body.scrollHeight - 160;
+  el.textContent = L.text;
+  if (nearBottom) window.scrollTo(0, document.body.scrollHeight);
+}
+// streams Claude's reply into the live bubble; keeps going (and saves) if he leaves the screen
+async function talkReply(t) {
+  const L = { id: t.id, text: "", busy: true, err: null };
+  live = L;
+  renderIfTalk(t.id);
+  let msg;
+  try {
+    const client = await claude();
+    const stream = client.beta.messages.stream({
+      model: MODEL, max_tokens: 16000,
+      betas: ["server-side-fallback-2026-07-01"], fallbacks: "default",
+      output_config: { effort: "medium" },
+      cache_control: { type: "ephemeral" },   // caches the growing conversation prefix
+      system: talkSystem(t),
+      messages: apiMsgs(t).map((m) => ({ role: m.role, content: m.text })),
+    });
+    for await (const ev of stream) if (ev.type === "content_block_delta" && ev.delta.type === "text_delta") { L.text += ev.delta.text; liveDraw(L); }
+    msg = await stream.finalMessage();
+  } catch (e) {
+    L.busy = false;
+    L.err = claudeError(e).message;
+    renderIfTalk(t.id);
+    return;
+  }
+  t.usd = (t.usd || 0) + countUsage(msg.usage);
+  const text = textOf(msg) || L.text;
+  // a refusal drops the partial text and takes his turn out of what's sent from here on (it stays visible, marked); a cut-off reply keeps it and says so
+  if (msg.stop_reason === "refusal") {
+    const last = t.messages[t.messages.length - 1];
+    if (last && last.role === "user") last.refused = true;
+    t.messages.push({ role: "note", text: REFUSAL_LINE, at: Date.now() });
+  } else if (!text.trim()) t.messages.push({ role: "note", text: "Claude sent back nothing. Try again.", at: Date.now() });
+  else t.messages.push({ role: "assistant", text, at: Date.now(), cut: msg.stop_reason === "max_tokens" });
+  if (live === L) live = null;
+  t.u = Date.now();
+  await saveTalks();
+  renderIfTalk(t.id);
+}
+// line-level union: the repo's file plus every line of the phone's copy it doesn't have, under the same "## " heading (headings the repo lacks go at the end)
+function unionNotes(remote, local) {
+  const split = (s) => { const out = [{ head: "", lines: [] }]; for (const l of s.split("\n")) { if (/^##+ /.test(l)) out.push({ head: l.trim(), lines: [] }); else out[out.length - 1].lines.push(l); } return out; };
+  const R = split(remote);
+  for (const sec of split(local)) {
+    const r = R.find((x) => x.head === sec.head);
+    const have = new Set((r ? r.lines : []).map((l) => l.trim()));
+    const extra = sec.lines.filter((l) => l.trim() && !/^# /.test(l) && !have.has(l.trim()));
+    if (!extra.length) continue;
+    if (r) { let k = r.lines.length; while (k > 0 && !r.lines[k - 1].trim()) k--; r.lines.splice(k, 0, ...extra); }
+    else R.push({ head: sec.head, lines: extra.concat("") });
+  }
+  const out = R.map((x) => (x.head ? [x.head, ...x.lines] : x.lines).join("\n")).join("\n");
+  return out.endsWith("\n") ? out : out + "\n";
+}
+// The PC writes the same file, so take the repo's copy before a talk or a wrap-up; offline, keep what's here.
+// Notes this phone wrote while backup was off (no sha, or marked dirty) aren't thrown away: both copies are kept, and the next wrap-up writes the union back.
+let pulling = null;
+function pullNotes() {
+  if (!syncOn()) return Promise.resolve(false);
+  if (!pulling) pulling = (async () => {
+    try {
+      const [text, sha] = await ghGetText("talk/notes.md");
+      if (text == null) return false;
+      const L = S.talkNotes, keepLocal = (L.dirty || !L.sha) && (L.text || "").trim() && L.text !== text;
+      const next = keepLocal ? unionNotes(text, L.text) : text;
+      const changed = next !== L.text;
+      S.talkNotes = { text: next, sha, at: Date.now(), dirty: next !== text };
+      await put("talkNotes", S.talkNotes);
+      return changed;
+    } catch { return false; } finally { pulling = null; }
+  })();
+  return pulling;
+}
+function refreshNotes() { pullNotes().then((changed) => { const r = route(); if (changed && r.name === "talk" && !r.args[0]) render(); }); }
+// false when the repo copy changed first
+async function saveNotes(text) {
+  let sha = S.talkNotes.sha;
+  if (syncOn()) {
+    sha = await ghPutText("talk/notes.md", text, S.talkNotes.sha, "talk notes");
+    if (sha == null) return false;
+  }
+  S.talkNotes = { text, sha, at: Date.now(), dirty: !syncOn() };   // dirty: the repo doesn't have this yet
+  await put("talkNotes", S.talkNotes);
+  return true;
+}
+function notesPrompt(t) {
+  const conv = apiMsgs(t).map((m) => (m.role === "user" ? "Perry: " : "You: ") + m.text).join("\n");
+  return "Today's date: " + ymd(new Date()) + "\n\nCurrent notes:\n" + (S.talkNotes.text || NOTES_TEMPLATE) + "\n\nConversation:\n" + conv;
+}
+async function wrapUp(t) {
+  if (wrapping || S.settings.writeNotes === false) return;
+  const n = apiMsgs(t).length;
+  if (n <= (t.notesSaved || 0)) return toast("Your notes already cover this talk.");
+  wrapping = t.id;
+  renderIfTalk(t.id);
+  try {
+    const client = await claude();
+    // a second round if the PC saved in between: fetch again and redo the merge on the fresh file
+    for (let attempt = 0; attempt < 2; attempt++) {
+      await pullNotes();
+      let res;
+      try {
+        res = await client.beta.messages.create({
+          model: MODEL, max_tokens: 16000,
+          betas: ["server-side-fallback-2026-07-01"], fallbacks: "default",
+          output_config: { effort: "low", format: { type: "json_schema", schema: NOTES_SCHEMA } },
+          system: NOTES_SYSTEM,
+          messages: [{ role: "user", content: notesPrompt(t) }],
+        });
+      } catch (e) { throw claudeError(e); }
+      t.usd = (t.usd || 0) + countUsage(res.usage);
+      if (res.stop_reason === "refusal") throw new Error("Claude couldn't write notes for this one.");
+      if (res.stop_reason === "max_tokens") throw new Error("The notes came back cut off, so nothing was changed. Try Wrap up again.");
+      let out;
+      try { out = JSON.parse(textOf(res)); } catch { throw new Error("The notes came back in the wrong shape, so nothing was changed. Try Wrap up again."); }
+      if (!(out.notes || "").trim()) throw new Error("Claude sent back empty notes; nothing was changed.");
+      if (!(await saveNotes(out.notes))) continue;
+      t.notesSaved = n;
+      toast("Talk notes: " + out.summary);
+      return;
+    }
+    throw new Error("The notes file kept changing. Try Wrap up again.");
+  } catch (e) {
+    toast(e.message);
+  } finally {
+    wrapping = null;
+    t.u = Date.now();
+    await saveTalks();
+    renderIfTalk(t.id);
+  }
+}
+// leaving a chat with two or more replies and nothing saved: offer once per batch of new messages
+function offerWrap(id) {
+  const t = S.talks.find((x) => x.id === id);
+  if (!t || S.settings.writeNotes === false || (live && live.busy && live.id === id)) return;
+  const n = apiMsgs(t).length;
+  if (apiMsgs(t).filter((m) => m.role === "assistant").length < 2 || n <= (t.notesSaved || 0) || n <= (t.offered || 0)) return;
+  t.offered = n;
+  saveTalks();
+  toast("Save notes from this talk?", "Save", () => wrapUp(t));
+}
+// two taps instead of a confirm() dialog: the first arms the button for four seconds
+function armed(b, label) {
+  if (b.dataset.arm) return true;
+  const was = b.textContent;
+  b.dataset.arm = "1";
+  b.textContent = label;
+  setTimeout(() => { if (b.isConnected) { delete b.dataset.arm; b.textContent = was; } }, 4000);
+  return false;
+}
+
+function viewTalk(r) {
+  if (r.args[0]) return viewChat(r.args[0]);
+  refreshNotes();
+  return viewTalkList();
+}
+function viewTalkList() {
+  const noKey = !(S.settings.apiKey || "").trim();
+  const talks = S.talks.slice().sort((a, b) => (b.u || b.at) - (a.u || a.at));
+  const notes = S.talkNotes.text;
+  return `
+  <div class="spread" style="margin:4px 0 10px"><a href="#/me" class="small">‹ Progress</a></div>
+  <h1 style="margin-top:0">Talk</h1>
+  <p class="small dim" style="margin-top:-6px">A private chat with Claude as a friend who's also a mentor. Think out loud about whatever's on your mind.</p>
+  ${noKey ? `<div class="card small">Talk needs your Claude API key. <a href="#/settings">Add it in Settings</a>.</div>` : ""}
+  <button class="btn primary block" data-act="newTalk" ${noKey ? "disabled" : ""}>New talk</button>
+  <h2>Conversations</h2>
+  <div class="card">${talks.length ? talks.map((t) => `<a class="wrow" href="#/talk/${t.id}"><span class="dim">${h(shortMD(ymd(new Date(t.at))))}</span><b style="min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${h(t.title)}</b><span class="dim small">≈ ${money(t.usd || 0)}</span></a>`).join("")
+    : `<p class="dim small" style="margin:0">No talks yet.</p>`}</div>
+  ${talks.length ? `<button class="btn danger block" data-act="deleteTalks">Delete all conversations</button>` : ""}
+  <h2>About you</h2>
+  <div class="card">
+    <div class="small dim" style="margin-bottom:8px"><b>Private, stays on this phone.</b> A few lines Claude should know: what you're working on, what's been on your mind. Your talk notes add to this.</div>
+    <textarea id="talkAbout" placeholder="e.g. what you do, what you're training for, what's been on your mind lately">${h(S.talkAbout || "")}</textarea>
+    <p class="small dim" style="margin:8px 0 0">Goes to Claude with each talk, fixed when the talk starts. Not backed up, not in "Download everything".</p>
+  </div>
+  <h2>Your talk notes</h2>
+  <div class="card">
+    ${notes ? `<pre class="notes">${h(notes)}</pre>` : `<p class="small dim" style="margin:0">No notes yet. They get written when you wrap up a talk.</p>`}
+    <p class="small dim" style="margin:${notes ? 10 : 6}px 0 0">Stored on this phone${syncOn() ? ` and in ${h(repo())} as <span class="code">talk/notes.md</span>, the same file /talk on your PC uses` : ""}.${S.talkNotes.at ? " Updated " + h(new Date(S.talkNotes.at).toLocaleDateString("en-US", { month: "short", day: "numeric" })) + "." : ""}</p>
+  </div>
+  <h2>Privacy</h2>
+  <div class="card small">
+    <p style="margin-top:0"><b>What goes to Claude</b> (Anthropic's API, with your key): every time you send a message, the whole conversation so far, your About text and your talk notes. Nothing else from the app: no food photos, no progress photos, no workouts.</p>
+    <p><b>Where things are stored.</b> Conversations and your About text stay on this phone only: not backed up, not in "Download everything", gone if you delete them or the app's storage. Notes: on this phone, and if backup is on, in your private plate-data repo as talk/notes.md, shared with /talk on your PC.</p>
+    <label class="check"><input type="checkbox" data-set="writeNotes" ${S.settings.writeNotes !== false ? "checked" : ""}> Write notes after talks</label>
+    <button class="btn block" style="margin-top:8px" data-act="clearNotes">Clear notes on this phone</button>
+    <p class="dim" style="margin:8px 0 0">Clears only this phone's copy. The repo copy is untouched${syncOn() ? ", and comes back the next time you open Talk" : ""}.</p>
+  </div>`;
+}
+function viewChat(id) {
+  const t = id === "new" ? null : S.talks.find((x) => x.id === id);
+  if (id !== "new" && !t) return `<p class="dim">That talk is gone. <a href="#/talk">Back to Talk</a></p>`;
+  const noKey = !(S.settings.apiKey || "").trim();
+  const msgs = t ? t.messages : [], isLive = live && live.id === id, busy = !!(live && live.busy);
+  const n = t ? apiMsgs(t).length : 0;
+  const canWrap = t && S.settings.writeNotes !== false && apiMsgs(t).some((m) => m.role === "assistant") && n > (t.notesSaved || 0) && !busy;
+  // his message went out but no reply ever landed (the app was closed mid-reply): offer Retry
+  const last = t ? apiMsgs(t)[n - 1] : null, stalled = !!last && last.role === "user" && !busy && !(isLive && live.err);
+  return `
+  <div class="spread" style="margin:4px 0 6px"><a href="#/talk" class="small">‹ Talks</a><span class="dim small">${t ? "≈ " + money(t.usd || 0) + " so far" : "new talk"}</span>
+    ${wrapping === id ? `<span class="small dim">Saving notes…</span>` : canWrap ? `<button class="btn ghost" style="min-height:0;padding:4px 8px" data-act="wrapUp" data-id="${id}">Wrap up</button>` : "<span></span>"}</div>
+  <div class="chat">
+    ${msgs.length ? "" : `<p class="dim small" style="text-align:center;margin:auto 0 14px">What's on your mind?</p>`}
+    ${msgs.map((m) => m.role === "note" ? `<div class="note small dim">${h(m.text)}</div>`
+      : `<div class="msg ${m.role === "user" ? "u" : "a"}">${h(m.text)}${m.cut ? `<div class="small dim" style="margin-top:4px">(cut off)</div>` : ""}${m.refused ? `<div class="small dim" style="margin-top:4px">(declined · left out of the conversation from here)</div>` : ""}</div>`).join("")}
+    ${isLive && live.busy ? `<div class="msg a" id="live">${live.text ? h(live.text) : `<span class="typing"><i></i><i></i><i></i></span>`}</div>` : ""}
+    ${isLive && live.err ? `<div class="note small"><span class="error">${h(live.err)}</span> <button class="btn ghost" style="min-height:0;padding:4px 8px" data-act="retry" data-id="${id}">Retry</button></div>` : ""}
+    ${stalled ? `<div class="note small"><span class="dim">No reply came back.</span> <button class="btn ghost" style="min-height:0;padding:4px 8px" data-act="retry" data-id="${id}">Retry</button></div>` : ""}
+    ${t ? `<button class="btn ghost small block" data-act="deleteTalk" data-id="${id}" style="margin-top:14px;color:var(--bad)">Delete this conversation</button>` : ""}
+  </div>
+  <div class="composer">
+    ${noKey ? `<div class="card small" style="margin:0">Talk needs your Claude API key. <a href="#/settings">Add it in Settings</a>.</div>`
+      : `<div class="row" style="align-items:flex-end"><textarea id="talkIn" rows="1" placeholder="Say what's on your mind">${h(tdraft[id] || "")}</textarea><button class="btn primary" data-act="send" data-id="${id}" ${busy ? "disabled" : ""}>Send</button></div>`}
+    <div class="small dim" style="text-align:center;margin-top:6px">In crisis? Call or text 988.</div>
+  </div>`;
+}
+
 // ---------- actions ----------
 const ACT = {
+  // talk
+  async newTalk(b) { b.disabled = true; await pullNotes(); go("#/talk/new"); },
+  async send(b) {
+    if (sending || (live && live.busy)) return;
+    const ta = $("talkIn"), text = (ta ? ta.value : "").trim();
+    if (!text) return ta && ta.focus();
+    // before any await: a second tap must find the button off and the box empty
+    sending = true;
+    b.disabled = true;
+    if (ta) { ta.value = ""; ta.style.height = "auto"; }
+    const id = b.dataset.id;
+    delete tdraft[id];
+    put("tdraft", tdraft);
+    try {
+      let t = S.talks.find((x) => x.id === id);
+      if (!t) {
+        t = { id: uid(), title: talkTitle(text), at: Date.now(), u: Date.now(), messages: [], usd: 0, notesSaved: 0, notes: null, about: null };
+        S.talks.push(t);
+      }
+      // frozen at the first message: the system prompt stays the same (and cached) for the whole talk, whatever he edits later
+      if (t.notes == null) t.notes = S.talkNotes.text || "";
+      if (t.about == null) t.about = (S.talkAbout || "").trim();
+      t.messages.push({ role: "user", text, at: Date.now() });
+      t.u = Date.now();
+      await saveTalks();
+      if (id !== t.id) location.replace("#/talk/" + t.id);   // "new" becomes the real id without a back-stack entry
+      talkReply(t);
+    } finally { sending = false; }
+  },
+  retry(b) { const t = S.talks.find((x) => x.id === b.dataset.id); if (t && !sending && !(live && live.busy)) talkReply(t); },
+  wrapUp(b) { const t = S.talks.find((x) => x.id === b.dataset.id); if (t) wrapUp(t); },
+  async deleteTalk(b) {
+    if (!armed(b, "Tap again to delete")) return;
+    S.talks = S.talks.filter((x) => x.id !== b.dataset.id);
+    if (live && live.id === b.dataset.id) live = null;
+    await saveTalks();
+    go("#/talk");
+    toast("Conversation deleted");
+  },
+  async deleteTalks(b) {
+    if (!armed(b, "Tap again to delete all")) return;
+    S.talks = [];
+    live = null;
+    await saveTalks();
+    render();
+    toast("All conversations deleted");
+  },
+  async clearNotes(b) {
+    if (!armed(b, "Tap again to clear")) return;
+    S.talkNotes = { text: "", sha: undefined, at: Date.now() };   // no sha either: the next pull takes the repo's copy whole
+    await put("talkNotes", S.talkNotes);
+    render();
+    toast("Notes cleared on this phone");
+  },
   newPost(b, e) { e && e.preventDefault(); S.pdraft = { date: today(), photos: [], weight: "", caption: "" }; savePdraft(); go("#/newpost"); },
   pickProgress() { $("progIn").value = ""; $("progIn").click(); },
   dropPick(b) { S.pdraft.photos.splice(+b.dataset.i, 1); savePdraft(); render(); },
@@ -1082,7 +1803,7 @@ const ACT = {
     await put("posts", S.posts);
     scheduleSync(2000);
     go("#/me");
-    toast("Post deleted", "Undo", async () => { S.posts[i] = Object.assign({}, old, { del: false, u: Date.now() }); await put("posts", S.posts); scheduleSync(2000); render(); });
+    toast("Post deleted", "Undo", async () => { S.posts = undelete(S.posts, old.id); await put("posts", S.posts); scheduleSync(2000); render(); });
   },
   async setAvatar(b) {
     const p = S.posts.find((x) => x.id === b.dataset.id);
@@ -1257,15 +1978,129 @@ const ACT = {
     await put("favs", S.favs);
     scheduleSync(2000);
     render();
-    toast("Removed " + old.title, "Undo", async () => { S.favs[i] = Object.assign({}, old, { del: false, u: Date.now() }); await put("favs", S.favs); render(); });
+    toast("Removed " + old.title, "Undo", async () => { S.favs = undelete(S.favs, old.id); await put("favs", S.favs); scheduleSync(2000); render(); });
   },
   sync() { if (!syncOn()) return setSyncStatus("Add the GitHub token first.", true); syncNow(); },
   restore() { if (!syncOn()) return setSyncStatus("Add the GitHub token first.", true); syncNow({ full: true }); },
+  // lift
+  startW(b) {
+    if (S.wdraft) { toast("Finish or discard the workout in progress first"); return go("#/lift/go"); }
+    const t = S.templates.find((x) => x.id === b.dataset.id);
+    if (t) startWorkout(t);
+  },
+  tick(b) {
+    const d = S.wdraft;
+    if (!d) return;
+    const ex = d.exercises[+b.dataset.i], s = ex.sets[+b.dataset.j];
+    s.done = !s.done;
+    b.closest(".setrow").classList.toggle("done", s.done);
+    if (s.done && !d.editing) {   // no rest timer while fixing up a past workout
+      audioInit();   // the ✓ tap is the user gesture iOS needs before the beep can play later
+      if (S.settings.restTimer !== false) d.restEnd = Date.now() + (+ex.rest || 90) * 1000;
+    }
+    clearTimeout(wdraftTimer);
+    put("wdraft", d);
+    const n = setsDone(d), f = $("finishW");
+    if (f) f.textContent = (d.editing ? "Save changes" : "Finish workout") + " · " + n + " set" + (n === 1 ? "" : "s");
+    restBar();
+  },
+  addSet(b) { const ex = S.wdraft.exercises[+b.dataset.i], l = ex.sets[ex.sets.length - 1]; ex.sets.push({ w: l ? l.w : "", r: l ? l.r : "", done: false }); put("wdraft", S.wdraft); render(); },
+  dropSet(b) { const ex = S.wdraft.exercises[+b.dataset.i]; if (ex.sets.length > 1) ex.sets.pop(); put("wdraft", S.wdraft); render(); },
+  async finishW() {
+    const d = S.wdraft;
+    if (!d) return;
+    if (!setsDone(d)) return toast("Check off at least one set first, or discard the workout.");
+    // only checked sets are kept; a blank weight is bodyweight
+    const w = { id: d.id, date: d.date, templateId: d.templateId, name: d.name, startedAt: d.startedAt, endedAt: d.endedAt || Date.now(), note: (d.note || "").trim(), u: Date.now(),
+      exercises: d.exercises.map((ex) => ({ key: ex.key, name: ex.name, lo: ex.lo, hi: ex.hi, inc: ex.inc, rest: ex.rest,
+        sets: doneSets(ex).map((s) => ({ w: s.w === "" || s.w == null ? null : +s.w, r: r0(s.r), done: true })) })) };
+    const i = S.workouts.findIndex((x) => x.id === w.id);
+    if (i >= 0) S.workouts[i] = w; else S.workouts.push(w);
+    await put("workouts", S.workouts);
+    S.wdraft = null;
+    clearTimeout(wdraftTimer);
+    await put("wdraft", null);
+    restBar();
+    scheduleSync(2000);
+    go(d.editing ? "#/lift/w/" + w.id : "#/");
+    toast(d.editing ? "Saved" : w.name + " done · " + setsDone(w) + " sets · " + mins(w) + " min");
+  },
+  async discardW(b) {
+    // two taps instead of a confirm() dialog
+    if (!b.dataset.arm) {
+      b.dataset.arm = "1";
+      b.textContent = "Tap again to discard";
+      setTimeout(() => { if (b.isConnected) { delete b.dataset.arm; b.textContent = S.wdraft?.editing ? "Discard changes" : "Discard workout"; } }, 4000);
+      return;
+    }
+    const d = S.wdraft;
+    S.wdraft = null;
+    clearTimeout(wdraftTimer);
+    await put("wdraft", null);
+    restBar();
+    go(d.editing ? "#/lift/w/" + d.id : "#/lift");
+    toast(d.editing ? "Changes discarded" : "Workout discarded");
+  },
+  editW(b) {
+    if (S.wdraft) { toast("Finish or discard the workout in progress first"); return go("#/lift/go"); }
+    const w = S.workouts.find((x) => x.id === b.dataset.id);
+    if (!w) return;
+    S.wdraft = Object.assign(structuredClone(w), { editing: true, restEnd: null,
+      exercises: w.exercises.map((ex) => Object.assign({}, ex, { rest: ex.rest || restFor(ex.key), sets: ex.sets.map((s) => ({ w: s.w ?? "", r: s.r, done: !!s.done })) })) });
+    put("wdraft", S.wdraft);
+    go("#/lift/go");
+  },
+  async deleteW(b) {
+    const i = S.workouts.findIndex((x) => x.id === b.dataset.id);
+    if (i < 0) return;
+    const old = S.workouts[i];
+    S.workouts[i] = Object.assign({}, old, { del: true, u: Date.now() });
+    await put("workouts", S.workouts);
+    scheduleSync(2000);
+    go("#/lift");
+    toast("Workout deleted", "Undo", async () => { S.workouts = undelete(S.workouts, old.id); await put("workouts", S.workouts); scheduleSync(2000); render(); });
+  },
+  restAdd() { const d = S.wdraft; if (d && d.restEnd) { d.restEnd = Math.max(d.restEnd, Date.now()) + 30e3; put("wdraft", d); restBar(); } },
+  restSkip() { const d = S.wdraft; if (d) { d.restEnd = null; put("wdraft", d); restBar(); } },
+  addEx(b) {
+    const t = S.templates.find((x) => x.id === b.dataset.t);
+    const ex = { key: "", name: "", sets: 3, lo: 8, hi: 12, inc: 5, rest: 90, note: "" };
+    freshEx.add(ex);
+    t.exercises.push(ex);
+    saveTemplates(t);
+    render();
+    const inputs = view.querySelectorAll(`[data-tb="name"][data-t="${t.id}"]`);
+    inputs[inputs.length - 1]?.focus();
+  },
+  dropEx(b) { const t = S.templates.find((x) => x.id === b.dataset.t); t.exercises.splice(+b.dataset.i, 1); saveTemplates(t); render(); },
+  moveEx(b) {
+    const t = S.templates.find((x) => x.id === b.dataset.t), i = +b.dataset.i, j = i + +b.dataset.d;
+    if (j < 0 || j >= t.exercises.length) return;
+    [t.exercises[i], t.exercises[j]] = [t.exercises[j], t.exercises[i]];
+    saveTemplates(t);
+    render();
+  },
+  newTpl() {
+    const t = { id: uid(), name: "New session", order: Math.max(-1, ...liveTemplates().map((x) => x.order || 0)) + 1, exercises: [], u: Date.now() };
+    S.templates.push(t);
+    saveTemplates(t);
+    render();
+  },
+  async dropTpl(b) {
+    const i = S.templates.findIndex((x) => x.id === b.dataset.id);
+    if (i < 0) return;
+    const old = S.templates[i];
+    S.templates[i] = Object.assign({}, old, { del: true, u: Date.now() });
+    await put("templates", S.templates);
+    scheduleSync(2000);
+    render();
+    toast("Removed " + old.name, "Undo", async () => { S.templates = undelete(S.templates, old.id); await put("templates", S.templates); scheduleSync(2000); render(); });
+  },
   async export() {
     const photos = {};
     for (const k of await allKeys()) if (String(k).startsWith("photo:")) photos[k.slice(6)] = await get(k);
     const data = { app: "plate", exported: new Date().toISOString(), settings: Object.fromEntries(GOAL_KEYS.map((k) => [k, S.settings[k]])),
-      favs: S.favs, days: S.days, steps: S.steps, profile: S.profile, posts: S.posts, photos };
+      favs: S.favs, days: S.days, steps: S.steps, profile: S.profile, posts: S.posts, templates: S.templates, workouts: S.workouts, photos };
     const blob = new Blob([JSON.stringify(data)], { type: "application/json" });
     const file = new File([blob], "plate-" + today() + ".json", { type: "application/json" });
     if (navigator.canShare && navigator.canShare({ files: [file] })) { try { await navigator.share({ files: [file] }); return; } catch { /* fall through to download */ } }
@@ -1302,7 +2137,27 @@ view.addEventListener("click", (e) => {
 });
 view.addEventListener("input", (e) => {
   const t = e.target;
+  if (t.id === "talkIn") { tdraft[route().args[0]] = t.value; t.style.height = "auto"; t.style.height = Math.min(140, t.scrollHeight) + "px"; return; }
+  if (t.id === "talkAbout") { S.talkAbout = t.value; return saveAbout(); }
   if (t.dataset.pbind && S.pdraft) { S.pdraft[t.dataset.pbind] = t.value; return savePdraft(); }
+  if (t.dataset.wb && S.wdraft) {
+    const d = S.wdraft, k = t.dataset.wb;
+    if (k === "note") d.note = t.value; else d.exercises[+t.dataset.i].sets[+t.dataset.j][k] = t.value;
+    return saveWdraft();
+  }
+  if (t.dataset.tb) {
+    const tpl = S.templates.find((x) => x.id === t.dataset.t), k = t.dataset.tb;
+    if (!tpl) return;
+    if (k === "tname") tpl.name = t.value;
+    else {
+      const ex = tpl.exercises[+t.dataset.i];
+      if (!ex) return;
+      if (k === "name") { ex.name = t.value; if (freshEx.has(ex)) ex.key = slug(t.value); }
+      else if (k === "note") ex.note = t.value;
+      else ex[k] = t.value === "" ? 0 : +t.value;
+    }
+    return saveTemplates(tpl);
+  }
   if (t.dataset.bind === "text") {
     const a = route().args[0];
     ensureInputDraft(/^\d{4}-\d{2}-\d{2}$/.test(a || "") ? a : today()).text = t.value;
@@ -1324,6 +2179,7 @@ view.addEventListener("input", (e) => {
 view.addEventListener("change", async (e) => {
   const t = e.target;
   if (t.dataset.bind === "saveFav" && S.draft) { S.draft.saveFav = t.checked; saveDraft(); return; }
+  if (t.id === "talkAbout") { clearTimeout(aboutTimer); aboutTimer = 0; S.talkAbout = t.value; return put("talkAbout", S.talkAbout); }   // blur: write it now
   if (t.dataset.cmp) return go("#/compare/" + t.dataset.cmp + "/" + t.value);
   const k = t.dataset.set;
   if (!k) return;
@@ -1333,7 +2189,12 @@ view.addEventListener("change", async (e) => {
   await saveSettings();
   if (k === "token" || k === "repo") { S.meta.restored = 0; await saveMeta(); if (syncOn()) syncNow(); else setSyncStatus("Not backed up: everything lives on this phone only."); }
   else if (GOAL_KEYS.includes(k)) scheduleSync(2000);
+  else if (k === "restTimer") restBar();
   toast("Saved");
+});
+$("rest").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-act]");
+  if (b && ACT[b.dataset.act]) ACT[b.dataset.act](b, e);
 });
 $("photoIn").addEventListener("change", async () => {
   const file = $("photoIn").files[0];
@@ -1362,11 +2223,14 @@ $("progIn").addEventListener("change", async () => {
   await savePdraft();
   render();
 });
+// going to the background (or being closed): iOS may never bring this page back, so save what the debounces are holding
+window.addEventListener("pagehide", flushDrafts);
 document.addEventListener("visibilitychange", () => {
-  if (document.visibilityState !== "visible") return;
+  if (document.visibilityState !== "visible") return flushDrafts();
   // after a long time away, pull new steps and show the right day
   if (Date.now() - (S.meta.lastSync || 0) > 10 * 60e3) syncNow();
   if (["today"].includes(route().name)) render();
+  restBar();   // the phone was locked: show what's actually left of the rest, not where the counter stopped
 });
 
 // ---------- boot ----------
@@ -1375,6 +2239,7 @@ if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catc
 // The review screen survives the app being closed mid-log; anything else starts on Today.
 if (["review", "edit"].includes(route().name) && !(S.draft && S.draft.stage === "review")) location.hash = "#/";
 render();
+restBar();
 if (syncOn()) syncNow();
 </script>
 </body>
