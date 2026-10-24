@@ -168,6 +168,13 @@
   .picks .x { position: absolute; top: 4px; right: 4px; width: 28px; height: 28px; font-size: 15px; background: rgba(0,0,0,.6); color: #fff; }
   .picks .add { display: flex; align-items: center; justify-content: center; font-size: 28px; color: var(--dim); border: 2px dashed var(--line); background: none; }
   .nudge { border: 1px solid var(--accent); }
+  .heat { display: grid; grid-template-columns: repeat(12, 1fr); grid-template-rows: repeat(7, auto); grid-auto-flow: column; gap: 3px; }
+  .heat i, i.key { display: block; aspect-ratio: 1; border-radius: 4px; background: var(--card2); }
+  .heat i.l1, i.key.l1 { background: rgba(61,220,132,.38); }
+  .heat i.l2, i.key.l2 { background: var(--accent); }
+  .heat i.f { background: transparent; }
+  i.key { display: inline-block; width: 11px; height: 11px; vertical-align: -1px; }
+  .heatmarks { display: grid; grid-template-columns: repeat(12, 1fr); gap: 3px; text-align: center; font-size: 10px; color: var(--accent); min-height: 14px; margin-top: 3px; }
   .delta.down { color: var(--accent); } .delta.up { color: var(--warn); }
 
   #toast { position: fixed; left: 50%; bottom: calc(96px + env(safe-area-inset-bottom)); transform: translateX(-50%) translateY(20px);
@@ -198,7 +205,8 @@ const PRICE_IN = 4 / 1e6, PRICE_OUT = 20 / 1e6;   // Claude Opus 5.5, dollars pe
 const DEFAULT_REPO = "PerryIndustries/plate-data";
 const DEFAULTS = { cal: 2050, protein: 160, carbs: 215, fat: 60, stepsGoal: 9000, dayStart: 4, goalsU: 0,
   apiKey: "", token: "", repo: DEFAULT_REPO, backupProgress: true };
-const PROFILE_DEFAULT = { name: "Me", goal: 150, avatar: null, u: 0 };
+// weight stays off the profile unless he turns it on: the profile is about showing up, not the scale
+const PROFILE_DEFAULT = { name: "Me", goal: 150, avatar: null, showWeight: false, u: 0 };
 const GOAL_KEYS = ["cal", "protein", "carbs", "fat", "stepsGoal", "dayStart"];
 // Starting favorites so the first week needs no typing. Restaurant numbers are estimates; edit them freely.
 const STARTERS = [
@@ -669,7 +677,7 @@ function viewDay(r) {
   </div>
   ${isToday ? progressNudge() : ""}
   <div class="card">
-    <div class="spread"><b>Food</b><a class="small" href="#/add/${date}">+ Add</a></div>
+    <div class="spread"><span><b>Food</b>${isToday && logStreak() >= 2 ? ` <span class="small ok">🔥 ${logStreak()} days in a row</span>` : ""}</span><a class="small" href="#/add/${date}">+ Add</a></div>
     ${entries.length ? entries.map((e) => `
       <div class="entry" data-act="edit" data-d="${date}" data-id="${e.id}">
         <div class="thumb" ${e.photo ? `data-photo="${e.photo}"` : ""}>${e.photo ? "" : e.src === "fav" ? "★" : "🍽"}</div>
@@ -878,6 +886,39 @@ function progressStats() {
   return { ps, first, last, lost: first && last ? first.weight - last.weight : null,
     weeks: ps.length ? Math.floor(daysBetween(ps[0].date, today()) / 7) : 0 };
 }
+const loggedDay = (date) => totals(date).n > 0;
+const proteinDay = (date) => { const t = totals(date); return t.n > 0 && t.p >= S.settings.protein * 0.95; };
+// days in a row with food logged; an empty today doesn't break it until the day is over
+function logStreak() {
+  let d = today(), n = 0;
+  if (!loggedDay(d)) d = shiftDay(d, -1);
+  while (loggedDay(d)) { n++; d = shiftDay(d, -1); }
+  return n;
+}
+// back-to-back 7-day windows (ending today) that each have a check-in
+function checkinStreak() {
+  const dates = livePosts().map((p) => p.date);
+  let end = today(), n = 0;
+  while (dates.some((d) => { const k = daysBetween(d, end); return k >= 0 && k < 7; })) { n++; end = shiftDay(end, -7); }
+  return n;
+}
+function heatmap() {
+  const t = today(), dow = (new Date(t + "T12:00:00").getDay() + 6) % 7;   // 0 = Monday
+  const start = shiftDay(t, -dow - 7 * 11);
+  const posted = new Set(livePosts().map((p) => p.date));
+  let cells = "", marks = "";
+  for (let w = 0; w < 12; w++) {
+    let week = false;
+    for (let r = 0; r < 7; r++) {
+      const d = shiftDay(start, w * 7 + r);
+      if (posted.has(d)) week = true;
+      const cls = d > t ? "f" : proteinDay(d) ? "l2" : loggedDay(d) ? "l1" : "";
+      cells += `<i class="${cls}" title="${d}"></i>`;
+    }
+    marks += `<span>${week ? "●" : ""}</span>`;
+  }
+  return `<div class="heat">${cells}</div><div class="heatmarks">${marks}</div>`;
+}
 function progressNudge() {
   const ps = livePosts();
   const card = (title, sub) => `<a class="card nudge" href="#/newpost" data-act="newPost" style="display:block;text-decoration:none;color:var(--text)"><b>${title}</b><div class="small dim">${sub}</div></a>`;
@@ -894,29 +935,36 @@ function deltaHtml(cur, prev, label) {
 
 function viewMe() {
   const st = progressStats(), p = S.profile, ps = st.ps.slice().reverse();
+  const last30 = Array.from({ length: 30 }, (_, i) => shiftDay(today(), -i));
+  const logged30 = last30.filter(loggedDay).length, protein30 = last30.filter(proteinDay).length;
   const start = st.first ? st.first.weight : null, cur = st.last ? st.last.weight : null;
   const pct = start && cur && start > p.goal ? Math.max(0, Math.min(100, ((start - cur) / (start - p.goal)) * 100)) : 0;
-  const lost = st.lost == null ? "—" : st.lost === 0 ? "0" : (st.lost > 0 ? "−" : "+") + lb(Math.abs(st.lost));
   return `
   <div class="profile">
     <div class="avatar" ${p.avatar ? `data-photo="${p.avatar}"` : ""}>${p.avatar ? "" : "🙂"}</div>
     <div style="flex:1;min-width:0">
       <div class="spread"><b style="font-size:20px">${h(p.name)}</b><button class="btn ghost" style="min-height:0;padding:4px 8px" data-act="editProfile">Edit</button></div>
       <div class="pstats" style="margin-top:6px">
-        <div><b>${st.ps.length}</b><span>posts</span></div>
-        <div><b class="${st.lost > 0 ? "ok" : ""}">${lost}</b><span>lb since start</span></div>
-        <div><b>${st.weeks}</b><span>weeks in</span></div>
+        <div><b>${st.ps.length}</b><span>check-ins</span></div>
+        <div><b class="${logStreak() >= 3 ? "ok" : ""}">${logStreak()}</b><span>day log streak</span></div>
+        <div><b class="${checkinStreak() >= 2 ? "ok" : ""}">${checkinStreak()}</b><span>week streak</span></div>
       </div>
     </div>
   </div>
   <div id="profEdit"></div>
   <div class="card">
-    <div class="spread small"><span class="dim">Start ${start ? lb(start) : "—"}</span><span><b>${cur ? lb(cur) + " lb" : "—"}</b> now</span><span class="dim">Goal ${lb(p.goal)}</span></div>
-    <div class="bar"><i style="width:${pct}%;background:var(--accent)"></i></div>
+    <div class="spread small" style="margin-bottom:10px"><b>Consistency</b><span class="dim">last 12 weeks</span></div>
+    ${heatmap()}
+    <p class="small" style="margin:10px 0 0">Logged food <b>${logged30}</b> of the last 30 days · hit protein on <b>${protein30}</b>.</p>
+    <div class="row small dim" style="margin-top:6px;gap:12px"><span><i class="key l1"></i> logged</span><span><i class="key l2"></i> hit protein</span><span><span style="color:var(--accent)">●</span> check-in week</span></div>
   </div>
+  ${p.showWeight && start ? `<div class="card">
+    <div class="spread small"><span class="dim">Start ${lb(start)}</span><span><b>${lb(cur)} lb</b> now</span><span class="dim">Goal ${lb(p.goal)}</span></div>
+    <div class="bar"><i style="width:${pct}%;background:var(--accent)"></i></div>
+  </div>` : ""}
   <button class="btn primary block" data-act="newPost" style="margin-bottom:14px">+ New progress post</button>
   ${ps.length ? `<div class="pgrid">${ps.map((x) => `<a href="#/post/${x.id}" data-photo="${x.photos[0] || ""}" aria-label="Post from ${h(shortMD(x.date))}">
-      ${x.photos.length > 1 ? `<span class="multi">❐</span>` : ""}${x.weight ? `<span class="w">${lb(x.weight)}</span>` : ""}<span class="d">${h(shortMD(x.date))}</span></a>`).join("")}</div>`
+      ${x.photos.length > 1 ? `<span class="multi">❐</span>` : ""}${p.showWeight && x.weight ? `<span class="w">${lb(x.weight)}</span>` : ""}<span class="d">${h(shortMD(x.date))}</span></a>`).join("")}</div>`
     : `<p class="dim small" style="text-align:center">No posts yet. Your first one is day one.</p>`}
   <p class="small dim" style="text-align:center;margin-top:16px">Private. These photos live on this phone${syncOn() && S.settings.backupProgress !== false ? " and in your private backup" : ""} and are never sent to Claude.</p>`;
 }
@@ -932,8 +980,8 @@ function viewPost(r) {
   <div class="carousel">${p.photos.map((id) => `<img data-img="${id}" alt="Progress photo">`).join("")}</div>
   ${p.photos.length > 1 ? `<div class="dots">${p.photos.length} photos · swipe</div>` : ""}
   <div class="card" style="margin-top:10px">
-    ${p.weight ? `<div class="spread"><b style="font-size:22px">${lb(p.weight)} lb</b><span class="small">${firstW && firstW !== p ? deltaHtml(p.weight, firstW.weight, "since start") : `<span class="dim">Day one</span>`}</span></div>` : `<span class="dim small">No weigh-in on this post</span>`}
-    ${prevW && p.weight ? `<div class="small" style="margin-top:4px">${deltaHtml(p.weight, prevW.weight, "since " + h(shortMD(prevW.date)))}</div>` : ""}
+    <div class="spread"><b style="font-size:18px">${i === 0 ? "Day one" : "Check-in #" + (i + 1)}</b><span class="small dim">${i === 0 ? "" : "week " + (Math.floor(daysBetween(ps[0].date, p.date) / 7) + 1)}</span></div>
+    ${S.profile.showWeight && p.weight ? `<div class="small" style="margin-top:4px">${lb(p.weight)} lb ${firstW && firstW !== p ? " · " + deltaHtml(p.weight, firstW.weight, "since start") : ""}${prevW ? " · " + deltaHtml(p.weight, prevW.weight, "since " + h(shortMD(prevW.date))) : ""}</div>` : ""}
     ${p.caption ? `<p style="margin:10px 0 0;white-space:pre-wrap">${h(p.caption)}</p>` : ""}
   </div>
   <div class="row"><a class="btn" style="flex:1" href="#/compare/${p.id}">Before / after</a><button class="btn" style="flex:1" data-act="setAvatar" data-id="${p.id}">Make profile pic</button></div>
@@ -950,16 +998,17 @@ function viewCompare(r) {
   const [before, after] = ps.indexOf(a) < ps.indexOf(b) ? [a, b] : [b, a];
   const poses = Math.min(before.photos.length, after.photos.length);
   const k = Math.min(+r.args[2] || 0, poses - 1);
-  const side = (x, label) => `<div><img data-img="${x.photos[k] || x.photos[0]}" alt="${label}"><div class="cap"><b>${label}</b> · ${h(shortMD(x.date))}${x.weight ? `<div class="dim">${lb(x.weight)} lb</div>` : ""}</div></div>`;
+  const showW = S.profile.showWeight;
+  const side = (x, label) => `<div><img data-img="${x.photos[k] || x.photos[0]}" alt="${label}"><div class="cap"><b>${label}</b> · ${h(shortMD(x.date))}${showW && x.weight ? `<div class="dim">${lb(x.weight)} lb</div>` : ""}</div></div>`;
   return `
   <div class="spread" style="margin:4px 0 10px"><a href="#/post/${a.id}" class="small">‹ Post</a><b>Before / after</b><span></span></div>
   <div class="compare">${side(before, "Before")}${side(after, "After")}</div>
   ${poses > 1 ? `<div class="seg" style="margin-top:12px;justify-content:center">${Array.from({ length: poses }, (_, i) => `<button class="${i === k ? "on" : ""}" data-act="cmpPose" data-a="${a.id}" data-b="${b.id}" data-k="${i}">Photo ${i + 1}</button>`).join("")}</div>` : ""}
   <div class="card" style="margin-top:12px;text-align:center">
     <b>${daysBetween(before.date, after.date)} days apart</b>
-    ${before.weight && after.weight ? `<div style="margin-top:4px">${deltaHtml(after.weight, before.weight, "")}</div>` : ""}
+    ${showW && before.weight && after.weight ? `<div style="margin-top:4px">${deltaHtml(after.weight, before.weight, "")}</div>` : ""}
   </div>
-  <label class="field"><span>Compare with</span><select data-cmp="${a.id}">${others.slice().reverse().map((x) => `<option value="${x.id}" ${x === b ? "selected" : ""}>${h(shortMD(x.date))}${x === ps[0] ? " (day one)" : ""}${x.weight ? " · " + lb(x.weight) + " lb" : ""}</option>`).join("")}</select></label>`;
+  <label class="field"><span>Compare with</span><select data-cmp="${a.id}">${others.slice().reverse().map((x) => `<option value="${x.id}" ${x === b ? "selected" : ""}>${h(shortMD(x.date))}${x === ps[0] ? " (day one)" : ""}${showW && x.weight ? " · " + lb(x.weight) + " lb" : ""}</option>`).join("")}</select></label>`;
 }
 
 function viewNewPost() {
@@ -972,10 +1021,9 @@ function viewNewPost() {
         ${d.photos.length < 6 ? `<button class="add" data-act="pickProgress" aria-label="Add photos">+</button>` : ""}</div>
       <p class="small dim" style="margin-top:0">Front, side and back work best. Same mirror, same light, in the morning before eating, so every week compares fairly.</p>`}
   <div class="card">
-    <div class="grid2">
-      <label class="field"><span>Weight (lb)</span><input type="number" inputmode="decimal" step="0.1" data-pbind="weight" value="${h(d.weight ?? "")}" placeholder="${last ? lb(last.weight) : "e.g. 160.8"}"></label>
-      <label class="field"><span>Date</span><input type="date" data-pbind="date" value="${h(d.date)}"></label>
-    </div>
+    <label class="field"><span>Date</span><input type="date" data-pbind="date" value="${h(d.date)}"></label>
+    <details style="margin-bottom:12px" ${S.profile.showWeight || d.weight ? "open" : ""}><summary class="small dim">Add a weigh-in (optional${S.profile.showWeight ? "" : ", stays hidden on your profile"})</summary>
+      <label class="field" style="margin:10px 0 0"><span>Weight (lb)</span><input type="number" inputmode="decimal" step="0.1" data-pbind="weight" value="${h(d.weight ?? "")}" placeholder="${last ? lb(last.weight) : "e.g. 160.8"}"></label></details>
     <label class="field" style="margin:0"><span>Note to yourself (optional)</span><textarea data-pbind="caption" placeholder="How you feel, what went well this week">${h(d.caption || "")}</textarea></label>
   </div>
   <button class="btn primary block" data-act="savePost">${d.editing ? "Save changes" : "Post"}</button>
@@ -1048,12 +1096,13 @@ const ACT = {
   editProfile() {
     $("profEdit").innerHTML = `<div class="card">
       <label class="field"><span>Name</span><input type="text" id="pf_name" value="${h(S.profile.name)}"></label>
-      <label class="field"><span>Goal weight (lb)</span><input type="number" inputmode="decimal" step="0.1" id="pf_goal" value="${h(S.profile.goal)}"></label>
+      <label class="check"><input type="checkbox" id="pf_showWeight" ${S.profile.showWeight ? "checked" : ""}> Show my weight on my profile and posts</label>
+      <label class="field"><span>Goal weight (lb, only shown when weight is on)</span><input type="number" inputmode="decimal" step="0.1" id="pf_goal" value="${h(S.profile.goal)}"></label>
       <button class="btn primary block" data-act="saveProfile">Save</button></div>`;
   },
   async saveProfile() {
     const name = ($("pf_name").value || "").trim() || "Me", goal = parseFloat($("pf_goal").value);
-    S.profile = Object.assign({}, S.profile, { name, goal: goal > 0 ? goal : S.profile.goal, u: Date.now() });
+    S.profile = Object.assign({}, S.profile, { name, goal: goal > 0 ? goal : S.profile.goal, showWeight: $("pf_showWeight").checked, u: Date.now() });
     await put("profile", S.profile);
     scheduleSync(2000);
     render();
