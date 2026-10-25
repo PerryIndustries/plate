@@ -1,5 +1,5 @@
 // Offline support: serve the app from cache, refresh the cache from the network when online.
-const CACHE = "plate-v7";
+const CACHE = "plate-v8";
 const FILES = ["./", "./index.html", "./manifest.webmanifest", "./icon-192.png", "./icon-512.png", "./apple-touch-icon.png"];
 
 self.addEventListener("install", (e) => {
@@ -20,7 +20,7 @@ self.addEventListener("fetch", (e) => {
   if (req.method !== "GET" || new URL(req.url).origin !== location.origin) return;
   // Network first so updates arrive, cache when offline.
   e.respondWith(
-    fetch(req)
+    fetch(req, { cache: "no-cache" })   // skip the phone's HTTP cache so a new version shows on the next open
       .then((res) => {
         const copy = res.clone();
         caches.open(CACHE).then((c) => c.put(req, copy));
