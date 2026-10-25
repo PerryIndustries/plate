@@ -857,7 +857,13 @@ async function pullSteps() {
   const list = await ghList("steps");
   const next = {};
   for (const it of list) {
-    const m = /^(\d{4}-\d{2}-\d{2})_([\d.,]+)(?:_(\d{4,6}))?/.exec(decodeURIComponent(it.name));
+    let m = /^(\d{4}-\d{2}-\d{2})_([\d.,]+)(?:_(\d{4,6}))?/.exec(decodeURIComponent(it.name));
+    // a Shortcut whose date variables came out blank writes _<steps>_.json: the day comes from when the file was saved
+    if (!m) {
+      const u = /^_([\d.,]+)_/.exec(decodeURIComponent(it.name));
+      const at = u && (await stepFileTime(it.name));
+      if (at) m = [null, ymd(at), u[1], pad(at.getHours()) + pad(at.getMinutes()) + pad(at.getSeconds())];
+    }
     if (!m) continue;
     const n = Math.round(parseFloat(m[2].replace(/,/g, "")));
     if (!isFinite(n)) continue;
@@ -866,6 +872,26 @@ async function pullSteps() {
   }
   S.steps = next;
   await put("steps", S.steps);
+}
+// when steps/<name> was first saved, from its commit; remembered per file name so each file costs one call ever
+async function stepFileTime(name) {
+  let seen = {};
+  try { seen = JSON.parse(localStorage.getItem("plate-step-times") || "{}"); } catch {}
+  if (seen[name]) return new Date(seen[name]);
+  try {
+    const r = await fetch("https://api.github.com/repos/" + repo() + "/commits?per_page=100&path=" + encodeURIComponent("steps/" + name), {
+      cache: "no-store",
+      headers: { Authorization: "Bearer " + S.settings.token.trim(), Accept: "application/vnd.github+json" },
+    });
+    if (!r.ok) return null;
+    const list = await r.json();
+    const first = Array.isArray(list) && list[list.length - 1];
+    const iso = first && first.commit && first.commit.committer && first.commit.committer.date;
+    if (!iso) return null;
+    seen[name] = iso;
+    try { localStorage.setItem("plate-step-times", JSON.stringify(seen)); } catch {}
+    return new Date(iso);
+  } catch { return null; }
 }
 function setSyncStatus(text, bad) {
   S.syncStatus = text;
