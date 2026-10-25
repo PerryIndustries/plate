@@ -270,7 +270,7 @@
 </nav>
 <div id="toast"><span id="toastText"></span><button id="toastBtn" hidden></button></div>
 <div id="rest" hidden><span class="dim small">Rest</span><b id="restLeft">0:00</b><button class="btn" data-act="restAdd">+30 s</button><button class="btn ghost" data-act="restSkip">Skip</button></div>
-<input type="file" id="photoIn" accept="image/*" hidden>
+<input type="file" id="photoIn" accept="image/*" multiple hidden>
 <input type="file" id="progIn" accept="image/*" multiple hidden>
 
 <script type="module">
@@ -316,9 +316,18 @@ const SPLIT = [
 
 const SYSTEM = `You estimate calories and macros for one meal in a personal food log. The person is a 22-year-old man, 5'8", about 160 lb, cutting fat while keeping protein high, so protein and calories matter most.
 
-Work out what was eaten and how much from the photo, the description, or both. Amounts and details the person states always win over what you see. Use a nutrition label whenever one is visible. Judge portions from the plate, hands, utensils and packaging; for restaurant food assume that restaurant's normal portion. Count cooking oil, butter, sauces, dressings and drinks that are visible or mentioned, because those are where food logs usually undercount.
+Work out what was eaten and how much from the photo(s), the description, or both. Amounts and details the person states always win over what you see. Use a nutrition label whenever one is visible, reading the serving size and the number of servings eaten.
 
-Split the meal into its main components, one item per distinct food. For each item give a short name, the portion you assumed in plain words ("8 oz cooked", "1 cup", "3 corn tortillas"), and calories plus protein, carbs, fat and fiber in grams for that portion.
+Work carefully, like a dietitian weighing the plate in their head:
+1. Identify every food, including what is hidden or mixed in (rice under meat, cheese inside a burrito, sauce on top, the tortillas).
+2. Estimate each portion's cooked weight in grams from size cues: a dinner plate is about 10-11 inches, a fork about 7 inches, a palm of meat about 4 oz, a fist of rice about 1 cup. If several photos are given they show the same meal; use every angle and count each food once.
+3. For a chain restaurant, use that chain's published nutrition for the standard item (Chipotle, Chick-fil-A, Subway and so on). Otherwise use standard USDA-style values for the food as cooked.
+4. Count cooking oil, butter, sauces, dressings, cheese and drinks that are visible, mentioned, or almost certainly used (restaurant meat and fried rice carry oil). Food logs usually undercount these.
+5. Check yourself: each item's calories should be close to 4 x protein + 4 x carbs + 9 x fat, and the meal total should be believable for what is in the picture. Fix anything that is off before answering.
+
+Saved meals the person logs often may be listed below; when this meal matches one, keep the estimate consistent with it.
+
+Split the meal into its main components, one item per distinct food. For each item give a short name, the portion you assumed in plain words with grams ("8 oz cooked (225 g)", "1 cup (160 g)", "3 corn tortillas (75 g)"), and calories plus protein, carbs, fat and fiber in grams for that portion.
 
 title: a short name for the meal, under 40 characters.
 confidence: "high" when amounts are known (label, weighed, stated), "medium" when portions are judged from a clear photo, "low" when guessing.
@@ -538,6 +547,18 @@ function scaled(img, max, q) {
   c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
   return c.toDataURL("image/jpeg", q);
 }
+// a food draft keeps its first photo in photo/big (the thumbnail) and any more of the same meal in more[]
+const MAX_FOOD_PHOTOS = 4;
+// the full-size photo as taken, kept in memory until the app closes so "Save to my Photos" saves the real thing
+const ORIGINALS = new Map();
+const foodPhotos = (d) => (d.photo ? [{ id: d.photoId, photo: d.photo, big: d.big }] : []).concat(d.more || []);
+function setFoodPhotos(d, list) {
+  const [first, ...rest] = list;
+  d.photo = first ? first.photo : null;
+  d.big = first ? first.big : null;
+  d.photoId = first ? first.id || null : null;
+  d.more = rest;
+}
 async function readPhoto(file) {
   const url = URL.createObjectURL(file);
   try {
@@ -611,22 +632,30 @@ function countUsage(u) {
   return usd;
 }
 const textOf = (msg) => (msg.content || []).filter((b) => b.type === "text").map((b) => b.text).join("");
-async function estimate({ photo, text, previous, correction }) {
+// his saved meals, so an estimate of a meal he eats a lot matches what he already logs for it
+function savedMealsNote() {
+  const favs = (S.favs || []).filter((f) => !f.del).slice(0, 20);
+  if (!favs.length) return "";
+  return "\n\nSaved meals:\n" + favs.map((f) => "- " + f.title + (f.sub ? " (" + f.sub + ")" : "") + ": " + r0(f.cal) + " cal, " + r0(f.p) + " g protein, " + r0(f.c) + " g carbs, " + r0(f.f) + " g fat").join("\n");
+}
+async function estimate({ photos, text, previous, correction }) {
   const client = await claude();
   const content = [];
-  if (photo) content.push({ type: "image", source: { type: "base64", media_type: "image/jpeg", data: photo.split(",")[1] } });
-  let ask = text ? "What I ate: " + text : "Estimate the meal in the photo.";
+  photos = (photos || []).filter(Boolean);
+  for (const ph of photos) content.push({ type: "image", source: { type: "base64", media_type: "image/jpeg", data: ph.split(",")[1] } });
+  let ask = text ? "What I ate: " + text : photos.length > 1 ? "Estimate the meal in the photos." : "Estimate the meal in the photo.";
+  if (photos.length > 1) ask += "\n\nThese " + photos.length + " photos are all one meal (other angles, more plates or a label). Count each food once.";
   if (previous) ask += "\n\nYour earlier estimate:\n" + JSON.stringify(previous) + "\n\nMy correction: " + correction + "\n\nGive the full corrected estimate.";
   content.push({ type: "text", text: ask });
   let res;
   try {
     res = await client.beta.messages.create({
       model: MODEL,
-      max_tokens: 8000,
+      max_tokens: 16000,
       betas: ["server-side-fallback-2026-07-01"],
       fallbacks: "default",
-      output_config: { effort: "low", format: { type: "json_schema", schema: SCHEMA } },
-      system: SYSTEM,
+      output_config: { effort: "high", format: { type: "json_schema", schema: SCHEMA } },
+      system: SYSTEM + savedMealsNote(),
       messages: [{ role: "user", content }],
     });
   } catch (e) { throw claudeError(e); }
@@ -1002,8 +1031,11 @@ function viewAdd(r) {
   return `
   <h1>Log food${date !== today() ? ` <span class="dim small">· ${h(niceDate(date))}</span>` : ""}</h1>
   ${noKey ? `<div class="card small">Photo and text estimates need your Claude API key. <a href="#/settings">Add it in Settings</a>. Saved meals and typing numbers work without it.</div>` : ""}
-  ${d && d.photo ? `<img class="preview" src="${d.photo}" alt="Your food"><div class="row" style="margin:8px 0 12px"><button class="btn ghost" data-act="pick">Change photo</button><button class="btn ghost" data-act="clearPhoto">Remove</button></div>`
-    : `<button class="photo-pick" data-act="pick"><span class="big">📷</span>Take or choose a photo</button>`}
+  ${d && d.photo ? `<div class="picks">${foodPhotos(d).map((ph, i) => `<div style="background-image:url(${ph.photo})"><button class="x" data-act="dropFoodPhoto" data-i="${i}" aria-label="Remove photo">×</button></div>`).join("")}
+      ${foodPhotos(d).length < MAX_FOOD_PHOTOS ? `<button class="add" data-act="pick" aria-label="Add another photo">+</button>` : ""}</div>
+      <button class="btn ghost block" data-act="saveFoodPhotos" style="margin-bottom:8px">Save ${foodPhotos(d).length > 1 ? "these photos" : "this photo"} to my Photos</button>
+      <p class="small dim" style="margin-top:0">All the photos are one meal: add another angle, a second plate or the nutrition label.</p>`
+    : `<button class="photo-pick" data-act="pick"><span class="big">📷</span>Take or choose photos</button>`}
   <label class="field" style="margin-top:12px"><span>What did you eat? Add amounts if you know them</span>
     <textarea id="foodText" data-bind="text" placeholder="e.g. 8 oz carne asada, cup of rice, pico">${h(d ? d.text : "")}</textarea></label>
   <button class="btn primary block" data-act="estimate" data-d="${date}" ${noKey ? "disabled" : ""}>Estimate calories</button>
@@ -1034,7 +1066,8 @@ function viewReview() {
   const lbl = { 0.5: "½", 0.75: "¾", 1: "1", 1.25: "1¼", 1.5: "1½", 2: "2" };
   return `
   <h1>${d.editing ? "Edit" : "Check it"}</h1>
-  ${d.photo ? `<img class="preview" src="${d.photo}" alt="Your food" style="margin-bottom:12px">` : ""}
+  ${d.photo ? `<img class="preview" src="${d.photo}" alt="Your food" style="margin-bottom:${d.more && d.more.length ? 6 : 12}px">` : ""}
+  ${d.more && d.more.length ? `<div class="picks">${d.more.map((ph) => `<div style="background-image:url(${ph.photo})"></div>`).join("")}</div>` : ""}
   <div class="card">
     <label class="field"><span>Name</span><input type="text" data-bind="title" value="${h(d.title)}"></label>
     ${d.confidence ? `<div class="row" style="margin-bottom:8px"><span class="pill ${h(d.confidence)}">${h(d.confidence)} confidence</span></div>` : ""}
@@ -2671,7 +2704,33 @@ const ACT = {
     render();
   },
   pick() { $("photoIn").value = ""; $("photoIn").click(); },
-  clearPhoto() { if (S.draft) { S.draft.photo = null; S.draft.big = null; saveDraft(); } render(); },
+  // iPhone won't let a web app write to Photos directly; the share sheet's "Save Image" does it
+  async saveFoodPhotos() {
+    const d = S.draft;
+    if (!d) return;
+    const files = await Promise.all(foodPhotos(d).map(async (ph, i) => ORIGINALS.get(ph.photo) ||
+      new File([await (await fetch(ph.big || ph.photo)).blob()], "plate-" + d.date + "-" + (i + 1) + ".jpg", { type: "image/jpeg" })));
+    if (navigator.canShare && navigator.canShare({ files })) {
+      try { await navigator.share({ files }); } catch {}   // closing the sheet without saving is fine
+      return;
+    }
+    for (const f of files) {
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(f);
+      a.download = f.name;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 10e3);
+    }
+  },
+  dropFoodPhoto(b) {
+    const d = S.draft;
+    if (!d) return render();
+    const left = foodPhotos(d);
+    left.splice(+b.dataset.i, 1);
+    setFoodPhotos(d, left);
+    saveDraft();
+    render();
+  },
   async estimate(b) {
     const date = b.dataset.d;
     const d = ensureInputDraft(date);
@@ -2680,7 +2739,7 @@ const ACT = {
     b.disabled = true;
     statusMsg("busy");
     try {
-      const est = await estimate({ photo: d.big || d.photo, text: d.text });
+      const est = await estimate({ photos: foodPhotos(d).map((ph) => ph.big || ph.photo), text: d.text });
       toReview(d, est);
     } catch (e) {
       b.disabled = false;
@@ -2713,7 +2772,7 @@ const ACT = {
     statusMsg("busy");
     try {
       const previous = { title: d.title, items: d.items, servings: d.servings };
-      const est = await estimate({ photo: d.big || d.photo, text: d.text, previous, correction: fix });
+      const est = await estimate({ photos: foodPhotos(d).map((ph) => ph.big || ph.photo), text: d.text, previous, correction: fix });
       d.text = d.text ? d.text + " (" + fix + ")" : fix;
       Object.assign(d, { title: est.title, items: est.items, confidence: est.confidence, note: est.note, servings: 1, override: {} });
       saveDraft();
@@ -2733,8 +2792,20 @@ const ACT = {
       S.photos.set(photoId, d.photo);
       S.meta.photoQueue.push(photoId);
     }
+    // the extra photos of the same meal, saved and backed up the same way
+    const more = [];
+    for (const ph of d.more || []) {
+      let id = ph.id;
+      if (!id) {
+        id = uid();
+        await put("photo:" + id, ph.photo);
+        S.photos.set(id, ph.photo);
+        S.meta.photoQueue.push(id);
+      }
+      more.push(id);
+    }
     const entry = { id: d.id || uid(), time: d.time || nowHM(), title: (d.title || "Food").trim(), items: d.items, servings: +d.servings || 1,
-      cal: r0(t.cal), p: r0(t.p), c: r0(t.c), f: r0(t.f), fiber: r0(t.fiber), photo: photoId, text: d.text || "",
+      cal: r0(t.cal), p: r0(t.p), c: r0(t.c), f: r0(t.f), fiber: r0(t.fiber), photo: photoId, ...(more.length ? { more } : {}), text: d.text || "",
       note: d.note || "", confidence: d.confidence || "", src: d.src || "manual" };
     await putEntry(d.date, entry);
     if (d.saveFav) {
@@ -2769,7 +2840,9 @@ const ACT = {
     const e = dayDoc(b.dataset.d).entries.find((x) => x.id === b.dataset.id);
     if (!e) return;
     const photo = await photoData(e.photo);
-    S.draft = { stage: "review", editing: true, id: e.id, date: b.dataset.d, time: e.time, title: e.title, items: structuredClone(e.items || []),
+    const more = [];
+    for (const id of e.more || []) { const ph = await photoData(id); if (ph) more.push({ id, photo: ph, big: null }); }
+    S.draft = { more, stage: "review", editing: true, id: e.id, date: b.dataset.d, time: e.time, title: e.title, items: structuredClone(e.items || []),
       servings: e.servings || 1, photo, photoId: e.photo, big: null, text: e.text || "", note: e.note, confidence: e.confidence, src: e.src,
       base: Object.fromEntries(["cal", "p", "c", "f", "fiber"].map((k) => [k, (+e[k] || 0) / (e.servings || 1)])),
       // keep the saved numbers exactly as they were unless something changes
@@ -3038,20 +3111,20 @@ $("rest").addEventListener("click", (e) => {
   if (b && ACT[b.dataset.act]) ACT[b.dataset.act](b, e);
 });
 $("photoIn").addEventListener("change", async () => {
-  const file = $("photoIn").files[0];
-  if (!file) return;
+  const files = [...$("photoIn").files];
+  if (!files.length) return;
   const r = route();
   const date = r.name === "add" && /^\d{4}-\d{2}-\d{2}$/.test(r.args[0] || "") ? r.args[0] : today();
   const d = ensureInputDraft(date);
   const typed = $("foodText")?.value;
   if (typed != null) d.text = typed;
-  try {
-    Object.assign(d, await readPhoto(file));
-    saveDraft();
-    render();
-  } catch {
-    toast("Couldn't open that photo. Try another one.");
+  const list = foodPhotos(d);
+  for (const f of files.slice(0, MAX_FOOD_PHOTOS - list.length)) {
+    try { const ph = await readPhoto(f); ORIGINALS.set(ph.photo, f); list.push(ph); } catch { toast("Couldn't open one of those photos. Try another one."); }
   }
+  setFoodPhotos(d, list);
+  saveDraft();
+  render();
 });
 $("progIn").addEventListener("change", async () => {
   const files = [...$("progIn").files];

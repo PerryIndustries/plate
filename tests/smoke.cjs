@@ -107,13 +107,20 @@ async function fakeClaude(route) {
   await page.evaluate(() => { window.__log = []; document.getElementById("photoIn").addEventListener("change", async (e) => { const f = e.target.files[0]; window.__log.push("change " + (f && f.size)); try { const img = new Image(); img.src = URL.createObjectURL(f); await img.decode(); window.__log.push("decoded " + img.naturalWidth); } catch (err) { window.__log.push("decode err " + err.message); } }); });
   await page.setInputFiles("#photoIn", IMG);
   await page.waitForTimeout(3000); console.log("log:", await page.evaluate(() => window.__log), "toast:", await page.locator("#toastText").innerText(), "errors:", errors, "draft:", await page.evaluate(() => document.querySelector("#view").innerHTML.slice(0, 300)));
-  await page.waitForSelector("img.preview");
+  await page.waitForSelector(".picks div");
+  ok(await page.locator('[data-act="saveFoodPhotos"]').count() === 1, "save-to-Photos button shows once a photo is in");
+  await page.evaluate(() => { document.getElementById("photoIn").value = ""; });   // what the + tile does before opening the picker
+  await page.setInputFiles("#photoIn", process.argv[3] || IMG);   // a second photo of the same meal
+  await page.waitForFunction(() => document.querySelectorAll(".picks div").length === 2);
+  ok(true, "second photo added next to the first");
   await page.fill("#foodText", "lunch");
   await page.click('[data-act="estimate"]');
   await page.waitForSelector('[data-act="saveEntry"]', { timeout: 30000 });
   ok(claudeReq && claudeReq.body.model === "claude-opus-5-5", "Claude called with opus 5.5");
   ok(claudeReq && claudeReq.body.messages[0].content[0].type === "image", "photo sent as image block");
   ok(claudeReq && claudeReq.body.output_config.format.type === "json_schema", "structured output requested");
+  ok(claudeReq && claudeReq.body.messages[0].content.filter((c) => c.type === "image").length === 2, "both photos sent to Claude");
+  ok(claudeReq && claudeReq.body.output_config.effort === "high", "estimates think at high effort");
   ok(claudeReq && claudeReq.body.fallbacks === "default" && /server-side-fallback-2026-07-01/.test(claudeReq.headers["anthropic-beta"] || ""), "fallbacks on");
   ok(claudeReq && claudeReq.headers["anthropic-dangerous-direct-browser-access"] === "true", "browser access header");
   const b64len = claudeReq.body.messages[0].content[0].source.data.length;
