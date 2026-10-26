@@ -1,5 +1,5 @@
 // Offline support: serve the app from cache, refresh the cache from the network when online.
-const CACHE = "plate-v9";
+const CACHE = "plate-v10";
 const FILES = ["./", "./index.html", "./manifest.webmanifest", "./icon-192.png", "./icon-512.png", "./apple-touch-icon.png"];
 
 self.addEventListener("install", (e) => {

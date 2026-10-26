@@ -155,6 +155,12 @@
   .pgrid .w { position: absolute; left: 6px; bottom: 6px; font-size: 12px; font-weight: 700; color: #fff;
     background: rgba(0,0,0,.55); padding: 2px 6px; border-radius: 6px; }
   .pgrid .d { position: absolute; right: 6px; bottom: 6px; font-size: 11px; color: #fff; background: rgba(0,0,0,.55); padding: 2px 6px; border-radius: 6px; }
+  .pgrid a.mos { aspect-ratio: 4 / 5; display: grid; gap: 2px; grid-template: 1fr / 1fr; }
+  .mos div { background: var(--card2) center/cover no-repeat; min-height: 0; }
+  .mos.n2 { grid-template-rows: 1fr 1fr; }
+  .mos.n3 { grid-template: 1.4fr 1fr / 1fr 1fr; } .mos.n3 div:first-child { grid-column: 1 / 3; }
+  .mos.n4 { grid-template: 1fr 1fr / 1fr 1fr; }
+  .collage { width: 100%; aspect-ratio: 4 / 5; border-radius: var(--r); background: var(--card); display: block; object-fit: cover; }
   .pgrid .multi { position: absolute; right: 6px; top: 6px; font-size: 13px; color: #fff; text-shadow: 0 1px 3px #000; }
   .carousel { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; margin: 0 -16px; scrollbar-width: none; }
   .carousel::-webkit-scrollbar { display: none; }
@@ -527,7 +533,7 @@ async function putEntry(date, entry) {
 }
 
 let toastTimer = 0;
-function toast(text, btnText, onBtn) {
+function toast(text, btnText, onBtn, ms) {
   $("toastText").textContent = text;
   const b = $("toastBtn");
   b.hidden = !btnText;
@@ -535,7 +541,7 @@ function toast(text, btnText, onBtn) {
   b.onclick = () => { $("toast").classList.remove("show"); onBtn && onBtn(); };
   $("toast").classList.add("show");
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => $("toast").classList.remove("show"), btnText ? 6000 : 2600);
+  toastTimer = setTimeout(() => $("toast").classList.remove("show"), ms || (btnText ? 6000 : 2600));
 }
 
 // ---------- photos ----------
@@ -551,6 +557,29 @@ function scaled(img, max, q) {
 const MAX_FOOD_PHOTOS = 4;
 // the full-size photo as taken, kept in memory until the app closes so "Save to my Photos" saves the real thing
 const ORIGINALS = new Map();
+const SAVED = new Set();   // photos already sent to the camera roll this session, so the button can say so
+// a data: URL as a File, built without awaiting so a share can still start from the tap
+function dataFile(url, name) {
+  const [head, b64] = url.split(","), bin = atob(b64), a = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) a[i] = bin.charCodeAt(i);
+  return new File([a], name, { type: head.slice(5).split(";")[0] });
+}
+// iPhone won't let a web app write to Photos directly; the share sheet's "Save Image" does it, and Safari only opens
+// that sheet straight from a tap, so nothing may be awaited between the tap and navigator.share
+function sharePhotos(files, done) {
+  if (navigator.canShare && navigator.canShare({ files })) {
+    navigator.share({ files }).then(() => done && done(), () => {});   // closing the sheet without saving is fine
+    return;
+  }
+  for (const f of files) {
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(f);
+    a.download = f.name;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 10e3);
+  }
+  done && done();
+}
 const foodPhotos = (d) => (d.photo ? [{ id: d.photoId, photo: d.photo, big: d.big }] : []).concat(d.more || []);
 function setFoodPhotos(d, list) {
   const [first, ...rest] = list;
@@ -945,10 +974,10 @@ let lastRoute = null;
 function render() {
   const r = route();
   const tab = { today: "today", day: "today", history: "history", add: "add", review: "add", edit: "today", favorites: "add", settings: "settings",
-    me: "me", post: "me", newpost: "me", compare: "me", lift: "today", talk: "me", wave: "today", moments: "me", patterns: "me" }[r.name] || "today";
+    me: "me", post: "me", newpost: "me", compare: "me", lift: "today", talk: "me", wave: "today", moments: "me", patterns: "me", eats: "me" }[r.name] || "today";
   document.querySelectorAll("#tabs a").forEach((a) => a.classList.toggle("on", a.dataset.tab === tab));
   const fn = { today: viewDay, day: viewDay, add: viewAdd, review: viewReview, edit: viewReview, history: viewHistory, favorites: viewFavs, settings: viewSettings,
-    me: viewMe, post: viewPost, newpost: viewNewPost, compare: viewCompare, lift: viewLift, talk: viewTalk, wave: viewWave, moments: viewMoments, patterns: viewPatterns }[r.name] || viewDay;
+    me: viewMe, post: viewPost, newpost: viewNewPost, compare: viewCompare, lift: viewLift, talk: viewTalk, wave: viewWave, moments: viewMoments, patterns: viewPatterns, eats: viewEats }[r.name] || viewDay;
   const chat = r.name === "talk" && !!r.args[0];
   view.classList.toggle("talk", chat);
   // leaving the wave being recorded stops the recorder (and the mic); the note is kept
@@ -1013,7 +1042,8 @@ function viewDay(r) {
   </div>
   ${isToday ? waveCards() + liftCard() + progressNudge() : ""}
   <div class="card">
-    <div class="spread"><span><b>Food</b>${isToday && logStreak() >= 2 ? ` <span class="small ok">🔥 ${logStreak()} days in a row</span>` : ""}</span><a class="small" href="#/add/${date}">+ Add</a></div>
+    <div class="spread"><span><b>Food</b>${isToday && logStreak() >= 2 ? ` <span class="small ok">🔥 ${logStreak()} days in a row</span>` : ""}</span>
+      <span>${dayPhotos(date).length ? `<a class="small" href="#/eats/${date}">Collage</a> <span class="dim small">·</span> ` : ""}<a class="small" href="#/add/${date}">+ Add</a></span></div>
     ${entries.length ? entries.map((e) => `
       <div class="entry" data-act="edit" data-d="${date}" data-id="${e.id}">
         <div class="thumb" ${e.photo ? `data-photo="${e.photo}"` : ""}>${e.photo ? "" : e.src === "fav" ? "★" : "🍽"}</div>
@@ -1021,6 +1051,136 @@ function viewDay(r) {
         <div class="nums"><b>${fmt(e.cal)}</b><span style="color:var(--protein)">${fmt(e.p)}g P</span></div>
       </div>`).join("") : `<p class="dim small">Nothing logged ${isToday ? "yet today" : "this day"}. Tap + to snap your food.</p>`}
   </div>`;
+}
+
+// ---------- what I eat: one collage per day, laid out like an Instagram grid ----------
+const MAX_COLLAGE = 9;
+// one photo per meal; a day with only a few meals also shows the extra angles
+function dayPhotos(date) {
+  const es = liveEntries(date).filter((e) => e.photo);
+  const main = es.map((e) => ({ id: e.photo, e }));
+  const extra = es.flatMap((e) => (e.more || []).map((id) => ({ id, e })));
+  return main.length >= 4 ? main.slice(0, MAX_COLLAGE) : main.concat(extra).slice(0, Math.max(main.length, 4));
+}
+const photoDays = () => Object.keys(S.days).filter((d) => dayPhotos(d).length).sort().reverse();
+
+function viewEats(r) {
+  if (/^\d{4}-\d{2}-\d{2}$/.test(r.args[0] || "")) return viewEatsDay(r.args[0]);
+  const days = photoDays();
+  const meals = days.reduce((a, d) => a + liveEntries(d).filter((e) => e.photo).length, 0);
+  return `
+  <div class="spread" style="margin:4px 0 10px"><a href="#/me" class="small">‹ Profile</a><span class="dim small">${days.length} day${days.length === 1 ? "" : "s"} · ${meals} meal${meals === 1 ? "" : "s"}</span></div>
+  <h1 style="margin-top:0">What I eat</h1>
+  ${days.length ? `<div class="pgrid">${days.map((d) => {
+      const ps = dayPhotos(d), n = Math.min(ps.length, 4), t = totals(d);
+      return `<a href="#/eats/${d}" class="mos n${n}" aria-label="Food on ${h(shortMD(d))}">${ps.slice(0, n).map((p) => `<div data-photo="${p.id}"></div>`).join("")}
+        ${ps.length > 4 ? `<span class="multi">❐</span>` : ""}<span class="w">${fmt(t.cal)}</span><span class="d">${h(shortMD(d))}</span></a>`;
+    }).join("")}</div>`
+    : `<p class="dim small" style="text-align:center">No food photos yet. Snap your next meal and today's collage starts here.</p>`}`;
+}
+
+function viewEatsDay(date) {
+  const ps = dayPhotos(date), days = photoDays(), i = days.indexOf(date);
+  if (!ps.length) return `<p class="dim">No food photos that day. <a href="#/eats">Back to what I eat</a></p>`;
+  const t = totals(date), newer = days[i - 1], older = days[i + 1];
+  setTimeout(() => drawCollage(date), 0);
+  return `
+  <div class="spread" style="margin:4px 0 10px"><a href="#/eats" class="small">‹ What I eat</a><a class="small" href="${date === today() ? "#/" : "#/day/" + date}">Open the day</a></div>
+  <div class="datebar">
+    <button data-act="eatsDay" data-d="${older || ""}" ${older ? "" : "disabled style='opacity:.3'"} aria-label="Earlier day">‹</button>
+    <div class="title"><b>${h(longDate(date))}</b><span class="dim small">${fmt(t.cal)} cal · ${fmt(t.p)}g protein</span></div>
+    <button data-act="eatsDay" data-d="${newer || ""}" ${newer ? "" : "disabled style='opacity:.3'"} aria-label="Later day">›</button>
+  </div>
+  <img id="collageImg" class="collage" alt="Everything you ate on ${h(shortMD(date))}" ${collage.date === date && collage.url ? `src="${collage.url}"` : ""}>
+  <button class="btn primary block" data-act="saveCollage" id="collageSave" ${collage.date === date && collage.file ? "" : "disabled"} style="margin-top:10px">📲 Save collage to my Photos</button>
+  <div class="card" style="margin-top:12px">${liveEntries(date).map((e) => `
+    <div class="entry" data-act="edit" data-d="${date}" data-id="${e.id}">
+      <div class="thumb" ${e.photo ? `data-photo="${e.photo}"` : ""}>${e.photo ? "" : e.src === "fav" ? "★" : "🍽"}</div>
+      <div class="info"><b>${h(e.title)}</b><span class="dim small">${h(niceTime(e.time))}</span></div>
+      <div class="nums"><b>${fmt(e.cal)}</b><span style="color:var(--protein)">${fmt(e.p)}g P</span></div>
+    </div>`).join("")}</div>`;
+}
+
+// the collage is drawn once per day and look, 1080x1350 (Instagram's portrait size), and kept ready so Save can share it from the tap
+const collage = { date: null, sig: null, url: null, file: null };
+function cells(n, x, y, w, ht, gap) {
+  const rows = { 1: [1], 2: [1, 1], 3: [1, 2], 4: [2, 2], 5: [2, 3], 6: [2, 2, 2], 7: [2, 2, 3], 8: [2, 3, 3], 9: [3, 3, 3] }[n];
+  // the first row of an odd layout gets more height: it's the hero shot
+  const weights = rows.map((c, i) => (i === 0 && rows.length > 1 && c < rows[1] ? 1.4 : 1));
+  const total = weights.reduce((a, b) => a + b, 0), free = ht - gap * (rows.length - 1);
+  const out = [];
+  let cy = y;
+  rows.forEach((c, i) => {
+    const rh = (free * weights[i]) / total, cw = (w - gap * (c - 1)) / c;
+    for (let j = 0; j < c; j++) out.push([x + j * (cw + gap), cy, cw, rh]);
+    cy += rh + gap;
+  });
+  return out;
+}
+async function drawCollage(date) {
+  const ps = dayPhotos(date), t = totals(date);
+  const sig = date + "|" + ps.map((p) => p.id + p.e.title + p.e.time).join(",") + "|" + r0(t.cal) + "|" + r0(t.p);
+  if (collage.sig === sig) return;
+  const imgs = await Promise.all(ps.map(async (p) => {
+    const d = await photoData(p.id);
+    if (!d) return null;
+    const img = new Image();
+    img.src = d;
+    try { await img.decode(); return img; } catch { return null; }
+  }));
+  const W = 1080, H = 1350, M = 28, TOP = 150, G = 8;
+  const c = document.createElement("canvas");
+  c.width = W; c.height = H;
+  const x = c.getContext("2d"), font = (wt, px) => `${wt} ${px}px -apple-system, system-ui, "Segoe UI", sans-serif`;
+  x.fillStyle = "#0F1110";
+  x.fillRect(0, 0, W, H);
+  x.fillStyle = "#EEF1EF";
+  x.font = font(800, 54);
+  x.textBaseline = "alphabetic";
+  x.fillText(new Date(date + "T12:00:00").toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric" }), M, 86);
+  x.font = font(600, 32);
+  x.fillStyle = "#8D9692";
+  const hitP = t.p >= S.settings.protein * 0.95;
+  const line = `${fmt(t.cal)} cal  ·  `;
+  x.fillText(line, M, 128);
+  x.fillStyle = hitP ? "#3DDC84" : "#5AA9FF";
+  x.fillText(`${fmt(t.p)}g protein${hitP ? " ✓" : ""}`, M + x.measureText(line).width, 128);
+  x.textAlign = "right";
+  x.fillStyle = "#8D9692";
+  x.font = font(600, 28);
+  x.fillText(`${liveEntries(date).length} meal${liveEntries(date).length === 1 ? "" : "s"}`, W - M, 128);
+  x.textAlign = "left";
+  cells(ps.length, M, TOP, W - 2 * M, H - TOP - M, G).forEach(([cx, cy, cw, ch], i) => {
+    const img = imgs[i], p = ps[i];
+    x.save();
+    x.beginPath();
+    x.roundRect(cx, cy, cw, ch, 18);
+    x.clip();
+    x.fillStyle = "#202422";
+    x.fillRect(cx, cy, cw, ch);
+    if (img) {   // cover: crop the photo to fill the cell
+      const k = Math.max(cw / img.naturalWidth, ch / img.naturalHeight), iw = img.naturalWidth * k, ih = img.naturalHeight * k;
+      x.drawImage(img, cx + (cw - iw) / 2, cy + (ch - ih) / 2, iw, ih);
+    }
+    const gr = x.createLinearGradient(0, cy + ch - 90, 0, cy + ch);
+    gr.addColorStop(0, "rgba(0,0,0,0)");
+    gr.addColorStop(1, "rgba(0,0,0,.65)");
+    x.fillStyle = gr;
+    x.fillRect(cx, cy + ch - 90, cw, 90);
+    const px = cw < 400 ? 22 : 26;
+    x.font = font(700, px);
+    x.fillStyle = "#fff";
+    let label = niceTime(p.e.time) + " · " + p.e.title;
+    while (label.length > 4 && x.measureText(label).width > cw - 28) label = label.slice(0, -2).trimEnd() + "…";
+    x.fillText(label, cx + 14, cy + ch - 16);
+    x.restore();
+  });
+  const blob = await new Promise((res) => c.toBlob(res, "image/jpeg", 0.9));
+  if (!blob) return;
+  if (collage.url) URL.revokeObjectURL(collage.url);
+  Object.assign(collage, { date, sig, url: URL.createObjectURL(blob), file: new File([blob], "plate-" + date + ".jpg", { type: "image/jpeg" }) });
+  const el = $("collageImg"), btn = $("collageSave");
+  if (el && route().args[0] === date) { el.src = collage.url; if (btn) btn.disabled = false; }
 }
 
 function viewAdd(r) {
@@ -1033,7 +1193,8 @@ function viewAdd(r) {
   ${noKey ? `<div class="card small">Photo and text estimates need your Claude API key. <a href="#/settings">Add it in Settings</a>. Saved meals and typing numbers work without it.</div>` : ""}
   ${d && d.photo ? `<div class="picks">${foodPhotos(d).map((ph, i) => `<div style="background-image:url(${ph.photo})"><button class="x" data-act="dropFoodPhoto" data-i="${i}" aria-label="Remove photo">×</button></div>`).join("")}
       ${foodPhotos(d).length < MAX_FOOD_PHOTOS ? `<button class="add" data-act="pick" aria-label="Add another photo">+</button>` : ""}</div>
-      <button class="btn ghost block" data-act="saveFoodPhotos" style="margin-bottom:8px">Save ${foodPhotos(d).length > 1 ? "these photos" : "this photo"} to my Photos</button>
+      ${foodPhotos(d).every((ph) => SAVED.has(ph.photo)) ? `<button class="btn ghost block ok" data-act="saveFoodPhotos" style="margin-bottom:8px">✓ Saved to your Photos</button>`
+        : `<button class="btn block" data-act="saveFoodPhotos" style="margin-bottom:8px">📲 Save ${foodPhotos(d).length > 1 ? "these photos" : "this photo"} to my Photos</button>`}
       <p class="small dim" style="margin-top:0">All the photos are one meal: add another angle, a second plate or the nutrition label.</p>`
     : `<button class="photo-pick" data-act="pick"><span class="big">📷</span>Take or choose photos</button>`}
   <label class="field" style="margin-top:12px"><span>What did you eat? Add amounts if you know them</span>
@@ -1296,6 +1457,7 @@ function viewMe() {
   </div>
   <div id="profEdit"></div>
   <a class="btn block" href="#/talk" style="margin-bottom:8px;justify-content:space-between"><span>💬 Talk</span><span class="dim small" style="font-weight:400">a private chat with Claude ›</span></a>
+  <a class="btn block" href="#/eats" style="margin-bottom:8px;justify-content:space-between"><span>🍽 What I eat</span><span class="dim small" style="font-weight:400">a collage of every day ›</span></a>
   <a class="btn block" href="#/moments" style="margin-bottom:12px;justify-content:space-between"><span>🌊 Moments</span><span class="dim small" style="font-weight:400">waves, check-ins, patterns ›</span></a>
   <div class="card">
     <div class="spread small" style="margin-bottom:10px"><b>Consistency</b><span class="dim">last 12 weeks</span></div>
@@ -2704,23 +2866,19 @@ const ACT = {
     render();
   },
   pick() { $("photoIn").value = ""; $("photoIn").click(); },
-  // iPhone won't let a web app write to Photos directly; the share sheet's "Save Image" does it
-  async saveFoodPhotos() {
+  saveFoodPhotos() {
     const d = S.draft;
     if (!d) return;
-    const files = await Promise.all(foodPhotos(d).map(async (ph, i) => ORIGINALS.get(ph.photo) ||
-      new File([await (await fetch(ph.big || ph.photo)).blob()], "plate-" + d.date + "-" + (i + 1) + ".jpg", { type: "image/jpeg" })));
-    if (navigator.canShare && navigator.canShare({ files })) {
-      try { await navigator.share({ files }); } catch {}   // closing the sheet without saving is fine
-      return;
-    }
-    for (const f of files) {
-      const a = document.createElement("a");
-      a.href = URL.createObjectURL(f);
-      a.download = f.name;
-      a.click();
-      setTimeout(() => URL.revokeObjectURL(a.href), 10e3);
-    }
+    const list = foodPhotos(d);
+    sharePhotos(list.map((ph, i) => ORIGINALS.get(ph.photo) || dataFile(ph.big || ph.photo, "plate-" + d.date + "-" + (i + 1) + ".jpg")), () => {
+      list.forEach((ph) => SAVED.add(ph.photo));
+      if (route().name === "add") render();
+    });
+  },
+  eatsDay(b) { if (b.dataset.d) go("#/eats/" + b.dataset.d); },
+  saveCollage() {
+    if (!collage.file || collage.date !== route().args[0]) return;
+    sharePhotos([collage.file], () => toast("Collage saved"));
   },
   dropFoodPhoto(b) {
     const d = S.draft;
@@ -3118,13 +3276,21 @@ $("photoIn").addEventListener("change", async () => {
   const d = ensureInputDraft(date);
   const typed = $("foodText")?.value;
   if (typed != null) d.text = typed;
-  const list = foodPhotos(d);
+  const list = foodPhotos(d), fresh = [];
   for (const f of files.slice(0, MAX_FOOD_PHOTOS - list.length)) {
-    try { const ph = await readPhoto(f); ORIGINALS.set(ph.photo, f); list.push(ph); } catch { toast("Couldn't open one of those photos. Try another one."); }
+    try {
+      const ph = await readPhoto(f);
+      ORIGINALS.set(ph.photo, f);
+      list.push(ph);
+      // just taken with the camera (a library pick is already in Photos): the camera here never saves it on its own
+      if (Date.now() - f.lastModified < 120e3) fresh.push(ph);
+    } catch { toast("Couldn't open one of those photos. Try another one."); }
   }
   setFoodPhotos(d, list);
   saveDraft();
   render();
+  if (fresh.length) toast(fresh.length > 1 ? "These aren't in your Photos yet" : "This isn't in your Photos yet", "Save it", () =>
+    sharePhotos(fresh.map((ph) => ORIGINALS.get(ph.photo)), () => { fresh.forEach((ph) => SAVED.add(ph.photo)); if (route().name === "add") render(); }), 10e3);
 });
 $("progIn").addEventListener("change", async () => {
   const files = [...$("progIn").files];
