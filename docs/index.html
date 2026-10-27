@@ -3034,13 +3034,14 @@ const ACT = {
   editProfile() {
     $("profEdit").innerHTML = `<div class="card">
       <label class="field"><span>Name</span><input type="text" id="pf_name" value="${h(S.profile.name)}"></label>
+      <label class="field"><span>Bio (optional)</span><textarea id="pf_bio" placeholder="Cutting to 150. Asada twice a week.">${h(S.profile.bio || "")}</textarea></label>
       <label class="check"><input type="checkbox" id="pf_showWeight" ${S.profile.showWeight ? "checked" : ""}> Show my weight on my profile and posts</label>
       <label class="field"><span>Goal weight (lb, only shown when weight is on)</span><input type="number" inputmode="decimal" step="0.1" id="pf_goal" value="${h(S.profile.goal)}"></label>
       <button class="btn primary block" data-act="saveProfile">Save</button></div>`;
   },
   async saveProfile() {
     const name = ($("pf_name").value || "").trim() || "Me", goal = parseFloat($("pf_goal").value);
-    S.profile = Object.assign({}, S.profile, { name, goal: goal > 0 ? goal : S.profile.goal, showWeight: $("pf_showWeight").checked, u: Date.now() });
+    S.profile = Object.assign({}, S.profile, { name, bio: ($("pf_bio").value || "").trim().slice(0, 200), goal: goal > 0 ? goal : S.profile.goal, showWeight: $("pf_showWeight").checked, u: Date.now() });
     await put("profile", S.profile);
     scheduleSync(2000);
     render();

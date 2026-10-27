@@ -121,11 +121,12 @@ async function fakeGitHub(route) {
   await page.goto("http://localhost:8767/#/me");
   await page.click('[data-act="editProfile"]');
   await page.fill("#pf_name", "Perry");
+  await page.fill("#pf_bio", "Locking in.");
   await page.check("#pf_showWeight");
   await page.fill("#pf_goal", "149");
   await page.click('[data-act="saveProfile"]');
   await page.waitForSelector('.profile:has-text("Perry")', { timeout: 5000 }).catch(() => {});
-  ok((await text()).includes("Perry") && (await text()).includes("Goal 149") && (await text()).includes("159.2 lb"), "weight shows once turned on", await text());
+  ok((await text()).includes("Perry") && (await text()).includes("Goal 149") && (await text()).includes("159.2 lb") && (await text()).includes("Locking in."), "weight and bio show once saved", await text());
 
   // backup then restore on a fresh phone
   await page.goto("http://localhost:8767/#/settings");
