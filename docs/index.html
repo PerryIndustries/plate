@@ -104,6 +104,12 @@
   .seg { display: flex; gap: 6px; flex-wrap: wrap; }
   .seg button { border: 1px solid var(--line); background: var(--card2); border-radius: 10px; padding: 8px 12px; min-width: 48px; }
   .seg.mini { margin-top: 6px; gap: 4px; flex-wrap: nowrap; }
+  .itemnums { display: flex; gap: 8px; margin-top: 6px; }
+  .itemnums label { display: flex; align-items: center; gap: 4px; flex: 1; }
+  .itemnums input { min-width: 0; width: 100%; padding: 6px 8px; }
+  .itemnums span { font-size: 12px; color: var(--dim); white-space: nowrap; }
+  .addcal { border-top: 1px solid var(--line); padding-top: 10px; margin-top: 4px; }
+  .addcal .row input { min-width: 0; }
   .seg.mini button { padding: 4px 0; min-width: 0; flex: 1; min-height: 34px; font-size: 13px; }
   .seg button.on { background: var(--accent); color: #06210F; border-color: var(--accent); font-weight: 700; }
   .totals { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
@@ -1261,8 +1267,19 @@ function draftTotals(d) {
   const b = d.base || {};
   const t = d.items.length ? { cal: sum("calories"), p: sum("protein"), c: sum("carbs"), f: sum("fat"), fiber: sum("fiber") }
     : { cal: (+b.cal || 0) * m, p: (+b.p || 0) * m, c: (+b.c || 0) * m, f: (+b.f || 0) * m, fiber: (+b.fiber || 0) * m };
+  // calories typed straight in (a drizzle of oil, a sauce, or a minus to take some off), never scaled by the amounts
+  const a = addsSum(d);
+  t.cal += a.cal; t.p += a.p;
   for (const k of ["cal", "p", "c", "f"]) if (d.override && d.override[k] != null && d.override[k] !== "") t[k] = +d.override[k];
   return t;
+}
+const addsSum = (d) => (d.adds || []).reduce((a, x) => ({ cal: a.cal + (+x.cal || 0), p: a.p + (+x.p || 0) }), { cal: 0, p: 0 });
+const signed = (v) => (v > 0 ? "+" : v < 0 ? "−" : "") + fmt(Math.abs(v));
+// a typed total stays a total: adding 100 to a hand-typed 600 makes 700
+function shiftOverride(d, cal, p) {
+  const o = d.override || {};
+  if (o.cal != null && o.cal !== "") o.cal = +o.cal + cal;
+  if (p && o.p != null && o.p !== "") o.p = +o.p + p;
 }
 
 function viewReview() {
@@ -1280,9 +1297,29 @@ function viewReview() {
     ${d.confidence ? `<div class="row" style="margin-bottom:8px"><span class="pill ${h(d.confidence)}">${h(d.confidence)} confidence</span></div>` : ""}
     ${d.note ? `<p class="small dim" style="margin:0 0 8px">${h(d.note)}</p>` : ""}
     ${d.items.length ? d.items.map((it, i) => `
-      <div class="item"><div class="info"><b>${h(it.name)}</b><div class="small dim">${itemAmt(it) !== 1 ? (AMT_LBL[itemAmt(it)] || itemAmt(it)) + "× " : ""}${h(it.portion)} · ${fmt(it.calories * itemAmt(it))} cal · ${fmt(it.protein * itemAmt(it))}g P</div>
+      <div class="item"><div class="info"><b>${h(it.name)}</b><div class="small dim">${itemAmt(it) !== 1 ? (AMT_LBL[itemAmt(it)] || itemAmt(it)) + "× " : ""}${h(it.portion)}</div>
+        <div class="itemnums">
+          <label><input type="number" inputmode="decimal" data-bind="itemNum" data-i="${i}" data-k="calories" value="${r0(it.calories * itemAmt(it))}" aria-label="Calories in the ${h(it.name)}"><span>cal</span></label>
+          <label><input type="number" inputmode="decimal" data-bind="itemNum" data-i="${i}" data-k="protein" value="${r0(it.protein * itemAmt(it))}" aria-label="Protein in the ${h(it.name)}"><span>g P</span></label>
+        </div>
         ${d.items.length > 1 ? `<div class="seg mini" role="group" aria-label="How much of the ${h(it.name)}">${AMTS.map((v) => `<button class="${itemAmt(it) === v ? "on" : ""}" data-act="itemAmt" data-i="${i}" data-v="${v}">${AMT_LBL[v]}</button>`).join("")}</div>` : ""}</div>
         <button class="x" data-act="dropItem" data-i="${i}" aria-label="Remove ${h(it.name)}">×</button></div>`).join("") : ""}
+    ${(d.adds || []).map((x, i) => `
+      <div class="item"><div class="info"><b>${h(x.name || "Calories")}</b><div class="small dim">${signed(+x.cal)} cal${+x.p ? " · " + signed(+x.p) + "g P" : ""} · typed in</div></div>
+        <button class="x" data-act="dropAdd" data-i="${i}" aria-label="Remove ${h(x.name || "these calories")}">×</button></div>`).join("")}
+    <div class="addcal">
+      <div class="small dim" style="margin-bottom:8px">Add calories straight up (oil, a sauce, a drink) or take some off</div>
+      <div class="seg mini" role="group" aria-label="Quick calorie fix">${[-100, -50, 50, 100, 200].map((v) => `<button data-act="quickCal" data-v="${v}">${signed(v)}</button>`).join("")}</div>
+      <div class="row" style="margin-top:8px;gap:6px">
+        <input type="text" id="addName" placeholder="What (optional)" style="flex:2">
+        <input type="number" inputmode="decimal" id="addCal" placeholder="cal" style="flex:1">
+        <input type="number" inputmode="decimal" id="addP" placeholder="P g" style="flex:1">
+      </div>
+      <div class="row" style="margin-top:8px">
+        <button class="btn" style="flex:1" data-act="addCal" data-sign="1">+ Add</button>
+        <button class="btn ghost" style="flex:1" data-act="addCal" data-sign="-1">− Take off</button>
+      </div>
+    </div>
   </div>
   <div class="card">
     <div class="small dim" style="margin-bottom:8px">${d.items.length > 1 ? "How much of the whole meal? (each item above has its own amount)" : "How much of it did you eat?"}</div>
@@ -3118,7 +3155,7 @@ const ACT = {
     const f = S.favs.find((x) => x.id === b.dataset.id);
     if (!f) return;
     const date = b.dataset.d;
-    const entry = { id: uid(), time: date === today() ? nowHM() : "12:00", title: f.title, items: f.items || [], servings: 1,
+    const entry = { id: uid(), time: date === today() ? nowHM() : "12:00", title: f.title, items: f.items || [], ...(f.adds ? { adds: structuredClone(f.adds) } : {}), servings: 1,
       cal: r0(f.cal), p: r0(f.p), c: r0(f.c), f: r0(f.f), fiber: r0(f.fiber), photo: null, text: "", note: "", confidence: "", src: "fav", fav: f.id };
     await putEntry(date, entry);
     go(date === today() ? "#/" : "#/day/" + date);
@@ -3126,6 +3163,28 @@ const ACT = {
   },
   dropItem(b) { S.draft.items.splice(+b.dataset.i, 1); S.draft.override = {}; saveDraft(); render(); },
   servings(b) { S.draft.servings = +b.dataset.v; S.draft.override = {}; saveDraft(); render(); },
+  quickCal(b) {
+    const d = S.draft, v = +b.dataset.v, name = ($("addName")?.value || "").trim();
+    d.adds = d.adds || [];
+    // repeated quick taps pile into one unnamed line instead of five
+    const x = !name && d.adds.find((a) => !a.name && !+a.p);
+    if (x) { x.cal = +x.cal + v; if (!x.cal) d.adds.splice(d.adds.indexOf(x), 1); } else d.adds.push({ id: uid(), name, cal: v, p: 0 });
+    shiftOverride(d, v, 0);
+    saveDraft(); render();
+  },
+  addCal(b) {
+    const d = S.draft, sign = +b.dataset.sign;
+    const cal = Math.abs(+($("addCal").value || 0)) * sign, p = Math.abs(+($("addP").value || 0)) * sign;
+    if (!cal && !p) return $("addCal").focus();
+    (d.adds = d.adds || []).push({ id: uid(), name: ($("addName").value || "").trim(), cal, p });
+    shiftOverride(d, cal, p);
+    saveDraft(); render();
+  },
+  dropAdd(b) {
+    const d = S.draft, [x] = (d.adds || []).splice(+b.dataset.i, 1);
+    if (x) shiftOverride(d, -(+x.cal || 0), -(+x.p || 0));
+    saveDraft(); render();
+  },
   itemAmt(b) { const it = S.draft.items[+b.dataset.i]; if (!it) return; it.amt = +b.dataset.v; S.draft.override = {}; saveDraft(); render(); },
   async redo(b) {
     const d = S.draft, fix = ($("fixText").value || "").trim();
@@ -3168,10 +3227,10 @@ const ACT = {
     }
     const entry = { id: d.id || uid(), time: d.time || nowHM(), title: (d.title || "Food").trim(), items: d.items, servings: +d.servings || 1,
       cal: r0(t.cal), p: r0(t.p), c: r0(t.c), f: r0(t.f), fiber: r0(t.fiber), photo: photoId, ...(more.length ? { more } : {}), text: d.text || "",
-      note: d.note || "", confidence: d.confidence || "", src: d.src || "manual" };
+      note: d.note || "", confidence: d.confidence || "", src: d.src || "manual", ...(d.adds && d.adds.length ? { adds: d.adds } : {}) };
     await putEntry(d.date, entry);
     if (d.saveFav) {
-      S.favs.push({ id: uid(), title: entry.title, sub: d.items.map((i) => i.name).slice(0, 4).join(", "), items: d.items,
+      S.favs.push({ id: uid(), title: entry.title, sub: d.items.map((i) => i.name).slice(0, 4).join(", "), items: d.items, ...(entry.adds ? { adds: entry.adds } : {}),
         cal: entry.cal, p: entry.p, c: entry.c, f: entry.f, fiber: entry.fiber, u: Date.now() });
       await put("favs", S.favs);
     }
@@ -3206,7 +3265,8 @@ const ACT = {
     for (const id of e.more || []) { const ph = await photoData(id); if (ph) more.push({ id, photo: ph, big: null }); }
     S.draft = { more, stage: "review", editing: true, id: e.id, date: b.dataset.d, time: e.time, title: e.title, items: structuredClone(e.items || []),
       servings: e.servings || 1, photo, photoId: e.photo, big: null, text: e.text || "", note: e.note, confidence: e.confidence, src: e.src,
-      base: Object.fromEntries(["cal", "p", "c", "f", "fiber"].map((k) => [k, (+e[k] || 0) / (e.servings || 1)])),
+      adds: structuredClone(e.adds || []),
+      base: Object.fromEntries(["cal", "p", "c", "f", "fiber"].map((k) => [k, ((+e[k] || 0) - (addsSum(e)[k] || 0)) / (e.servings || 1)])),
       // keep the saved numbers exactly as they were unless something changes
       override: { cal: e.cal, p: e.p, c: e.c, f: e.f } };
     saveDraft();
@@ -3433,7 +3493,17 @@ view.addEventListener("input", (e) => {
   const d = S.draft;
   if (!t.dataset.bind || !d) return;
   const k = t.dataset.bind;
-  if (k === "tot") {
+  if (k === "itemNum") {
+    // he types the number for what he ate; the item keeps it per full portion so the amount buttons still scale it
+    const it = d.items[+t.dataset.i];
+    if (!it) return;
+    it[t.dataset.k] = (+t.value || 0) / itemAmt(it);
+    d.override = {};
+    const tt = draftTotals(d);
+    for (const kk of ["cal", "p", "c", "f"]) { const el = view.querySelector(`input[data-bind="tot"][data-k="${kk}"]`); if (el) el.value = r0(tt[kk]); }
+    const save = view.querySelector('[data-act="saveEntry"]');
+    if (save) save.textContent = "Save · " + fmt(tt.cal) + " cal, " + fmt(tt.p) + "g protein";
+  } else if (k === "tot") {
     d.override = d.override || {};
     d.override[t.dataset.k] = t.value;
     const save = view.querySelector('[data-act="saveEntry"]');

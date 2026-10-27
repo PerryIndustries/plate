@@ -48,7 +48,7 @@ async function fakeClaude(route) {
   await page.waitForSelector(".picks div");
   await page.click('[data-act="estimate"]');
   await page.waitForSelector('[data-act="saveEntry"]', { timeout: 30000 });
-  ok(await page.locator(".seg.mini").count() === 2, "each item of a two-item meal gets its own amount");
+  ok(await page.locator(".item .seg.mini").count() === 2, "each item of a two-item meal gets its own amount");
   await page.click('[data-act="saveEntry"]');
   await page.waitForSelector(".entry");
   ok((await page.locator(".entry").innerText()).includes("1,000"), "logged at 1,000 cal", await page.locator(".entry").innerText());
@@ -61,7 +61,8 @@ async function fakeClaude(route) {
   await page.waitForSelector('[data-act="itemAmt"][data-i="1"][data-v="0.5"].on');
   ok((await cal()) === "800" && (await page.inputValue('input[data-bind="tot"][data-k="p"]')) === "42", "half the horchata: 800 cal, 42 g protein");
   const rows = await page.locator(".item").allInnerTexts();
-  ok(rows[1].includes("½× 16 oz") && rows[1].includes("200 cal") && rows[0].includes("600 cal"), "the item line shows its share", rows);
+  const itemCal = (i) => page.inputValue(`input[data-bind="itemNum"][data-i="${i}"][data-k="calories"]`);
+  ok(rows[1].includes("½× 16 oz") && (await itemCal(1)) === "200" && (await itemCal(0)) === "600", "the item line shows its share", rows);
   ok((await page.locator('[data-act="saveEntry"]').innerText()).includes("800 cal"), "save button follows");
   await page.locator(".item >> nth=0").scrollIntoViewIfNeeded();
   await page.screenshot({ path: path.join(__dirname, "items.png") });
@@ -91,7 +92,7 @@ async function fakeClaude(route) {
   await page.waitForSelector(".picks div");
   await page.click('[data-act="estimate"]');
   await page.waitForSelector('[data-act="saveEntry"]', { timeout: 30000 });
-  ok(await page.locator(".seg.mini").count() === 0 && (await text()).includes("How much of it did you eat?"), "one item: just the meal amount");
+  ok(await page.locator(".item .seg.mini").count() === 0 && (await text()).includes("How much of it did you eat?"), "one item: just the meal amount");
 
   ok(errors.length === 0, "no page errors", errors);
   console.log(`${pass} passed, ${fail} failed`);
