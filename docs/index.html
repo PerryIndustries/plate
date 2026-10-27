@@ -103,6 +103,8 @@
   .item .x { background: var(--card2); border: 0; border-radius: 10px; width: 36px; height: 36px; color: var(--dim); font-size: 18px; flex: none; }
   .seg { display: flex; gap: 6px; flex-wrap: wrap; }
   .seg button { border: 1px solid var(--line); background: var(--card2); border-radius: 10px; padding: 8px 12px; min-width: 48px; }
+  .seg.mini { margin-top: 6px; gap: 4px; flex-wrap: nowrap; }
+  .seg.mini button { padding: 4px 0; min-width: 0; flex: 1; min-height: 34px; font-size: 13px; }
   .seg button.on { background: var(--accent); color: #06210F; border-color: var(--accent); font-weight: 700; }
   .totals { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
   .totals label span { display: block; font-size: 12px; color: var(--dim); margin-bottom: 4px; }
@@ -150,12 +152,38 @@
   .pstats { flex: 1; display: grid; grid-template-columns: repeat(3, 1fr); text-align: center; }
   .pstats b { display: block; font-size: 19px; }
   .pstats span { font-size: 12px; color: var(--dim); }
-  .pgrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 3px; margin: 0 -16px; }
+  .igtop { display: flex; gap: 18px; align-items: center; margin: 4px 0 10px; }
+  .igtop .avatar { border: 0; box-shadow: 0 0 0 3px var(--bg), 0 0 0 5px var(--accent); margin: 5px; }
+  .bio { margin: 0 0 12px; }
+  .bio b { font-size: 16px; }
+  .bio p { margin: 2px 0 0; font-size: 14px; white-space: pre-wrap; }
+  .igbtns { display: flex; gap: 6px; margin-bottom: 14px; }
+  .igbtns .btn { flex: 1; min-height: 36px; padding: 6px 8px; font-size: 14px; border-radius: 10px; }
+  .hls { display: flex; gap: 16px; overflow-x: auto; margin: 0 -16px 10px; padding: 2px 16px 6px; scrollbar-width: none; }
+  .hls::-webkit-scrollbar { display: none; }
+  .hl { flex: none; display: flex; flex-direction: column; align-items: center; gap: 5px; width: 64px; background: none; border: 0; padding: 0;
+    color: var(--text); text-decoration: none; font-size: 12px; }
+  .hl i { width: 60px; height: 60px; border-radius: 50%; background: var(--card); border: 1px solid var(--line); display: flex;
+    align-items: center; justify-content: center; font-style: normal; font-size: 24px; box-shadow: 0 0 0 2px var(--bg), 0 0 0 3px var(--line); margin-top: 3px; }
+  .hl.on i { box-shadow: 0 0 0 2px var(--bg), 0 0 0 3px var(--accent); }
+  .igtabs { display: flex; border-top: 1px solid var(--line); margin: 0 -16px 2px; }
+  .igtabs a { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 9px 0 7px; color: var(--dim);
+    border-top: 2px solid transparent; margin-top: -1px; font-size: 11px; text-decoration: none; }
+  .igtabs a.on { color: var(--text); border-top-color: var(--text); }
+  .igtabs svg { width: 22px; height: 22px; }
+  .pgrid a.wk { display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 4px; text-align: center; padding: 8px;
+    background: linear-gradient(160deg, #1D2A23, #151917); color: var(--text); text-decoration: none; }
+  .pgrid a.wk b { font-size: 13px; line-height: 1.2; }
+  .pgrid a.wk span.s { font-size: 11px; color: var(--dim); }
+  .pgrid a.wk em { font-style: normal; font-size: 26px; }
+  .pgrid .k { position: absolute; left: 6px; top: 5px; font-size: 13px; text-shadow: 0 1px 3px #000; }
+  .gymgroup .picks { margin-bottom: 8px; }
+  .pgrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; margin: 0 -16px; }
   .pgrid a { position: relative; aspect-ratio: 3 / 4; background: var(--card2) center/cover no-repeat; display: block; }
   .pgrid .w { position: absolute; left: 6px; bottom: 6px; font-size: 12px; font-weight: 700; color: #fff;
     background: rgba(0,0,0,.55); padding: 2px 6px; border-radius: 6px; }
   .pgrid .d { position: absolute; right: 6px; bottom: 6px; font-size: 11px; color: #fff; background: rgba(0,0,0,.55); padding: 2px 6px; border-radius: 6px; }
-  .pgrid a.mos { aspect-ratio: 4 / 5; display: grid; gap: 2px; grid-template: 1fr / 1fr; }
+  .pgrid a.mos { aspect-ratio: 3 / 4; display: grid; gap: 2px; grid-template: 1fr / 1fr; }
   .mos div { background: var(--card2) center/cover no-repeat; min-height: 0; }
   .mos.n2 { grid-template-rows: 1fr 1fr; }
   .mos.n3 { grid-template: 1.4fr 1fr / 1fr 1fr; } .mos.n3 div:first-child { grid-column: 1 / 3; }
@@ -271,13 +299,14 @@
   <a href="#/" data-tab="today"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4"/></svg>Today</a>
   <a href="#/history" data-tab="history"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 20V10M12 20V4M19 20v-7"/></svg>History</a>
   <a href="#/add" class="plus" data-tab="add" aria-label="Log food"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></a>
-  <a href="#/me" data-tab="me"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg>Progress</a>
+  <a href="#/me" data-tab="me"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg>Profile</a>
   <a href="#/settings" data-tab="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg>Settings</a>
 </nav>
 <div id="toast"><span id="toastText"></span><button id="toastBtn" hidden></button></div>
 <div id="rest" hidden><span class="dim small">Rest</span><b id="restLeft">0:00</b><button class="btn" data-act="restAdd">+30 s</button><button class="btn ghost" data-act="restSkip">Skip</button></div>
 <input type="file" id="photoIn" accept="image/*" multiple hidden>
 <input type="file" id="progIn" accept="image/*" multiple hidden>
+<input type="file" id="gymIn" accept="image/*" multiple hidden>
 
 <script type="module">
 // no pinch zoom anywhere (iPhone ignores user-scalable=no on its own)
@@ -410,7 +439,7 @@ const allKeys = () => db ? kv("readonly", (s) => s.getAllKeys()) : Promise.resol
 
 // ---------- state ----------
 const S = { settings: {}, favs: [], days: {}, steps: {}, meta: {}, draft: null, photos: new Map(),
-  posts: [], profile: {}, pdraft: null, templates: [], workouts: [], wdraft: null, talks: [], talkNotes: {}, talkAbout: "", moments: null };
+  posts: [], profile: {}, pdraft: null, gdraft: null, templates: [], workouts: [], wdraft: null, talks: [], talkNotes: {}, talkAbout: "", moments: null };
 
 async function load() {
   S.settings = Object.assign({}, DEFAULTS, (await get("settings")) || {});
@@ -422,6 +451,7 @@ async function load() {
   S.posts = (await get("posts")) || [];
   S.profile = Object.assign({}, PROFILE_DEFAULT, (await get("profile")) || {});
   S.pdraft = (await get("pdraft")) || null;
+  S.gdraft = (await get("gdraft")) || null;
   S.templates = (await get("templates")) || [];
   S.workouts = (await get("workouts")) || [];
   S.wdraft = (await get("wdraft")) || null;
@@ -625,6 +655,30 @@ async function loadImage(file) {
   const url = URL.createObjectURL(file);
   try { const img = new Image(); img.src = url; await img.decode(); return img; }
   finally { setTimeout(() => URL.revokeObjectURL(url), 1000); }
+}
+
+// When a photo was taken, from its EXIF (photos picked from the library usually carry it; lastModified is often just
+// when Safari copied the file). Null when there's no readable date.
+async function takenAt(file) {
+  try {
+    const v = new DataView(await file.slice(0, 256 * 1024).arrayBuffer());
+    if (v.getUint16(0) !== 0xFFD8) return null;
+    for (let o = 2; o + 10 < v.byteLength;) {
+      const m = v.getUint16(o);
+      if (m === 0xFFE1 && v.getUint32(o + 4) === 0x45786966) return exifDate(v, o + 10);   // APP1 "Exif"
+      if ((m & 0xFF00) !== 0xFF00 || m === 0xFFDA) return null;   // start of image data: no EXIF
+      o += 2 + v.getUint16(o + 2);
+    }
+  } catch {}
+  return null;
+}
+function exifDate(v, t) {
+  const le = v.getUint16(t) === 0x4949, u16 = (p) => v.getUint16(t + p, le), u32 = (p) => v.getUint32(t + p, le);
+  const find = (ifd, tag) => { const n = u16(ifd); for (let i = 0; i < n; i++) if (u16(ifd + 2 + i * 12) === tag) return ifd + 2 + i * 12; return 0; };
+  const str = (e) => { if (!e) return ""; const n = u32(e + 4), at = n > 4 ? u32(e + 8) : e + 8; let s = ""; for (let i = 0; i < n - 1; i++) s += String.fromCharCode(v.getUint8(t + at + i)); return s; };
+  const ifd0 = u32(4), ex = find(ifd0, 0x8769);   // the Exif sub-IFD holds DateTimeOriginal; IFD0's DateTime is the fallback
+  const m = /^(\d{4}):(\d\d):(\d\d) (\d\d):(\d\d)/.exec((ex && str(find(u32(ex + 8), 0x9003))) || str(find(ifd0, 0x0132)));
+  return m ? new Date(+m[1], m[2] - 1, +m[3], +m[4], +m[5]).getTime() : null;
 }
 
 // ---------- Claude ----------
@@ -974,10 +1028,10 @@ let lastRoute = null;
 function render() {
   const r = route();
   const tab = { today: "today", day: "today", history: "history", add: "add", review: "add", edit: "today", favorites: "add", settings: "settings",
-    me: "me", post: "me", newpost: "me", compare: "me", lift: "today", talk: "me", wave: "today", moments: "me", patterns: "me", eats: "me" }[r.name] || "today";
+    me: "me", post: "me", newpost: "me", newgym: "me", compare: "me", lift: "today", talk: "me", wave: "today", moments: "me", patterns: "me", eats: "me" }[r.name] || "today";
   document.querySelectorAll("#tabs a").forEach((a) => a.classList.toggle("on", a.dataset.tab === tab));
   const fn = { today: viewDay, day: viewDay, add: viewAdd, review: viewReview, edit: viewReview, history: viewHistory, favorites: viewFavs, settings: viewSettings,
-    me: viewMe, post: viewPost, newpost: viewNewPost, compare: viewCompare, lift: viewLift, talk: viewTalk, wave: viewWave, moments: viewMoments, patterns: viewPatterns, eats: viewEats }[r.name] || viewDay;
+    me: viewMe, post: viewPost, newpost: viewNewPost, newgym: viewNewGym, compare: viewCompare, lift: viewLift, talk: viewTalk, wave: viewWave, moments: viewMoments, patterns: viewPatterns, eats: viewEats }[r.name] || viewDay;
   const chat = r.name === "talk" && !!r.args[0];
   view.classList.toggle("talk", chat);
   // leaving the wave being recorded stops the recorder (and the mic); the note is kept
@@ -1066,26 +1120,16 @@ const photoDays = () => Object.keys(S.days).filter((d) => dayPhotos(d).length).s
 
 function viewEats(r) {
   if (/^\d{4}-\d{2}-\d{2}$/.test(r.args[0] || "")) return viewEatsDay(r.args[0]);
-  const days = photoDays();
-  const meals = days.reduce((a, d) => a + liveEntries(d).filter((e) => e.photo).length, 0);
-  return `
-  <div class="spread" style="margin:4px 0 10px"><a href="#/me" class="small">‹ Profile</a><span class="dim small">${days.length} day${days.length === 1 ? "" : "s"} · ${meals} meal${meals === 1 ? "" : "s"}</span></div>
-  <h1 style="margin-top:0">What I eat</h1>
-  ${days.length ? `<div class="pgrid">${days.map((d) => {
-      const ps = dayPhotos(d), n = Math.min(ps.length, 4), t = totals(d);
-      return `<a href="#/eats/${d}" class="mos n${n}" aria-label="Food on ${h(shortMD(d))}">${ps.slice(0, n).map((p) => `<div data-photo="${p.id}"></div>`).join("")}
-        ${ps.length > 4 ? `<span class="multi">❐</span>` : ""}<span class="w">${fmt(t.cal)}</span><span class="d">${h(shortMD(d))}</span></a>`;
-    }).join("")}</div>`
-    : `<p class="dim small" style="text-align:center">No food photos yet. Snap your next meal and today's collage starts here.</p>`}`;
+  return viewMe({ args: ["food"] });   // the day grid lives on the profile's Food tab now
 }
 
 function viewEatsDay(date) {
   const ps = dayPhotos(date), days = photoDays(), i = days.indexOf(date);
-  if (!ps.length) return `<p class="dim">No food photos that day. <a href="#/eats">Back to what I eat</a></p>`;
+  if (!ps.length) return `<p class="dim">No food photos that day. <a href="#/me/food">Back to your profile</a></p>`;
   const t = totals(date), newer = days[i - 1], older = days[i + 1];
   setTimeout(() => drawCollage(date), 0);
   return `
-  <div class="spread" style="margin:4px 0 10px"><a href="#/eats" class="small">‹ What I eat</a><a class="small" href="${date === today() ? "#/" : "#/day/" + date}">Open the day</a></div>
+  <div class="spread" style="margin:4px 0 10px"><a href="#/me/food" class="small">‹ Profile</a><a class="small" href="${date === today() ? "#/" : "#/day/" + date}">Open the day</a></div>
   <div class="datebar">
     <button data-act="eatsDay" data-d="${older || ""}" ${older ? "" : "disabled style='opacity:.3'"} aria-label="Earlier day">‹</button>
     <div class="title"><b>${h(longDate(date))}</b><span class="dim small">${fmt(t.cal)} cal · ${fmt(t.p)}g protein</span></div>
@@ -1207,9 +1251,12 @@ function viewAdd(r) {
   <p style="text-align:center"><a class="small" href="#/favorites">Edit saved meals</a> <span class="dim small">·</span> <a class="small" href="#/lift">Start workout</a></p>`;
 }
 
+// how much of one item he actually had (half the horchata, all of the tacos); the item keeps its full-portion numbers
+const itemAmt = (it) => (+it.amt > 0 ? +it.amt : 1);
+const AMTS = [0.25, 0.5, 0.75, 1, 1.5, 2], AMT_LBL = { 0.25: "¼", 0.5: "½", 0.75: "¾", 1: "1", 1.25: "1¼", 1.5: "1½", 2: "2" };
 function draftTotals(d) {
   const m = +d.servings || 1;
-  const sum = (k) => d.items.reduce((a, it) => a + (+it[k] || 0), 0) * m;
+  const sum = (k) => d.items.reduce((a, it) => a + (+it[k] || 0) * itemAmt(it), 0) * m;
   // no item list (saved meals, typed numbers): scale the per-serving numbers instead
   const b = d.base || {};
   const t = d.items.length ? { cal: sum("calories"), p: sum("protein"), c: sum("carbs"), f: sum("fat"), fiber: sum("fiber") }
@@ -1223,8 +1270,7 @@ function viewReview() {
   if (!d || d.stage !== "review") return `<p class="dim">Nothing to review. <a href="#/add">Log food</a></p>`;
   const t = draftTotals(d);
   const canRedo = (d.photo || d.text) && (S.settings.apiKey || "").trim();
-  const servings = [0.5, 0.75, 1, 1.25, 1.5, 2];
-  const lbl = { 0.5: "½", 0.75: "¾", 1: "1", 1.25: "1¼", 1.5: "1½", 2: "2" };
+  const servings = [0.5, 0.75, 1, 1.25, 1.5, 2], lbl = AMT_LBL;
   return `
   <h1>${d.editing ? "Edit" : "Check it"}</h1>
   ${d.photo ? `<img class="preview" src="${d.photo}" alt="Your food" style="margin-bottom:${d.more && d.more.length ? 6 : 12}px">` : ""}
@@ -1234,11 +1280,12 @@ function viewReview() {
     ${d.confidence ? `<div class="row" style="margin-bottom:8px"><span class="pill ${h(d.confidence)}">${h(d.confidence)} confidence</span></div>` : ""}
     ${d.note ? `<p class="small dim" style="margin:0 0 8px">${h(d.note)}</p>` : ""}
     ${d.items.length ? d.items.map((it, i) => `
-      <div class="item"><div class="info"><b>${h(it.name)}</b><div class="small dim">${h(it.portion)} · ${fmt(it.calories)} cal · ${fmt(it.protein)}g P</div></div>
+      <div class="item"><div class="info"><b>${h(it.name)}</b><div class="small dim">${itemAmt(it) !== 1 ? (AMT_LBL[itemAmt(it)] || itemAmt(it)) + "× " : ""}${h(it.portion)} · ${fmt(it.calories * itemAmt(it))} cal · ${fmt(it.protein * itemAmt(it))}g P</div>
+        ${d.items.length > 1 ? `<div class="seg mini" role="group" aria-label="How much of the ${h(it.name)}">${AMTS.map((v) => `<button class="${itemAmt(it) === v ? "on" : ""}" data-act="itemAmt" data-i="${i}" data-v="${v}">${AMT_LBL[v]}</button>`).join("")}</div>` : ""}</div>
         <button class="x" data-act="dropItem" data-i="${i}" aria-label="Remove ${h(it.name)}">×</button></div>`).join("") : ""}
   </div>
   <div class="card">
-    <div class="small dim" style="margin-bottom:8px">How much of it did you eat?</div>
+    <div class="small dim" style="margin-bottom:8px">${d.items.length > 1 ? "How much of the whole meal? (each item above has its own amount)" : "How much of it did you eat?"}</div>
     <div class="seg">${servings.map((v) => `<button class="${(+d.servings || 1) === v ? "on" : ""}" data-act="servings" data-v="${v}">${lbl[v]}×</button>`).join("")}</div>
     <div class="totals" style="margin-top:14px">
       ${[["cal", "Calories"], ["p", "Protein"], ["c", "Carbs"], ["f", "Fat"]].map(([k, l]) => `
@@ -1377,7 +1424,8 @@ function viewSettings() {
 }
 
 // ---------- progress profile (private: photos stay on the phone and the private backup, never sent to Claude) ----------
-const livePosts = () => S.posts.filter((p) => !p.del).sort((a, b) => (a.date === b.date ? (a.at || 0) - (b.at || 0) : a.date < b.date ? -1 : 1));
+// posts are progress check-ins unless kind is "gym"; check-in numbering, streaks and before/after only count check-ins
+const livePosts = () => S.posts.filter((p) => !p.del && p.kind !== "gym").sort((a, b) => (a.date === b.date ? (a.at || 0) - (b.at || 0) : a.date < b.date ? -1 : 1));
 const daysBetween = (a, b) => Math.round((new Date(b + "T12:00:00") - new Date(a + "T12:00:00")) / 864e5);
 const shortMD = (date) => new Date(date + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" });
 const longDate = (date) => new Date(date + "T12:00:00").toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" });
@@ -1408,7 +1456,7 @@ function heatmap() {
   const t = today(), dow = (new Date(t + "T12:00:00").getDay() + 6) % 7;   // 0 = Monday
   const start = shiftDay(t, -dow - 7 * 11);
   const posted = new Set(livePosts().map((p) => p.date));
-  const lifted = new Set(liveWorkouts().map((w) => w.date));
+  const lifted = new Set(gymDays().map((g) => g.date));
   let cells = "", marks = "";
   for (let w = 0; w < 12; w++) {
     let week = false;
@@ -1436,50 +1484,114 @@ function deltaHtml(cur, prev, label) {
   return `<span class="delta ${d < 0 ? "down" : d > 0 ? "up" : ""}">${txt}</span> <span class="dim">${label}</span>`;
 }
 
-function viewMe() {
-  const st = progressStats(), p = S.profile, ps = st.ps.slice().reverse();
+const liveGym = () => S.posts.filter((p) => !p.del && p.kind === "gym");
+// every day he was at the gym, newest first: a gym photo post, a logged workout, or both, as one tile
+function gymDays() {
+  const m = new Map(), at = (d) => m.get(d) || m.set(d, { date: d, post: null, ws: [] }).get(d);
+  for (const p of liveGym()) at(p.date).post = p;
+  for (const w of liveWorkouts()) at(w.date).ws.push(w);
+  return [...m.values()].sort((a, b) => (a.date < b.date ? 1 : -1));
+}
+const foodDays = () => Object.keys(S.days).filter(loggedDay);
+let streaksOpen = false;
+try { streaksOpen = localStorage.getItem("plate-streaks") === "1"; } catch {}
+
+// grid tiles; in the mixed grid a corner badge says which kind each one is
+function foodTile(d, badge) {
+  const ps = dayPhotos(d), n = Math.min(ps.length, 4), t = totals(d);
+  return `<a href="#/eats/${d}" class="mos n${n}" aria-label="Food on ${h(shortMD(d))}">${ps.slice(0, n).map((p) => `<div data-photo="${p.id}"></div>`).join("")}
+    ${badge ? `<span class="k">🍽</span>` : ""}${ps.length > 4 ? `<span class="multi">❐</span>` : ""}<span class="w">${fmt(t.cal)}</span><span class="d">${h(shortMD(d))}</span></a>`;
+}
+function gymTile(g, badge) {
+  const w = g.ws[g.ws.length - 1], k = badge ? `<span class="k">🏋</span>` : "";
+  if (g.post) return `<a href="#/post/${g.post.id}" data-photo="${g.post.photos[0] || ""}" aria-label="Gym on ${h(shortMD(g.date))}">${k}
+    ${g.post.photos.length > 1 ? `<span class="multi">❐</span>` : ""}${w ? `<span class="w">${h(w.name)}</span>` : ""}<span class="d">${h(shortMD(g.date))}</span></a>`;
+  return `<a href="#/lift/w/${w.id}" class="wk" aria-label="Workout on ${h(shortMD(g.date))}"><em>🏋</em><b>${h(w.name)}</b>
+    <span class="s">${plural(setsDone(w), "set")} · ${mins(w)} min</span><span class="d">${h(shortMD(g.date))}</span></a>`;
+}
+function checkinTile(x, badge) {
+  return `<a href="#/post/${x.id}" data-photo="${x.photos[0] || ""}" aria-label="Check-in from ${h(shortMD(x.date))}">${badge ? `<span class="k">📷</span>` : ""}
+    ${x.photos.length > 1 ? `<span class="multi">❐</span>` : ""}${S.profile.showWeight && x.weight ? `<span class="w">${lb(x.weight)}</span>` : ""}<span class="d">${h(shortMD(x.date))}</span></a>`;
+}
+const TAB_ICONS = {
+  all: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M15 3v18M3 9h18M3 15h18"/></svg>`,
+  food: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M7 3v8M4 3v5a3 3 0 0 0 6 0V3M7 11v10M17 21V3c-2.5 1-4 4-4 8h4"/></svg>`,
+  gym: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6.5 6.5v11M17.5 6.5v11M3.5 9v6M20.5 9v6M6.5 12h11"/></svg>`,
+  progress: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="7" r="3.5"/><path d="M5 21c1.2-4.5 3.8-7 7-7s5.8 2.5 7 7"/></svg>`,
+};
+
+function viewMe(r) {
+  const tab = ["food", "gym", "progress"].includes(r.args[0]) ? r.args[0] : "all";
+  const st = progressStats(), p = S.profile, ps = st.ps.slice().reverse(), gd = gymDays(), fdays = photoDays();
   const last30 = Array.from({ length: 30 }, (_, i) => shiftDay(today(), -i));
   const logged30 = last30.filter(loggedDay).length, protein30 = last30.filter(proteinDay).length;
-  const ws = liveWorkouts(), lifted7 = ws.filter((w) => last30.slice(0, 7).includes(w.date)).length, lifted30 = ws.filter((w) => last30.includes(w.date)).length;
+  const lifted7 = gd.filter((g) => last30.slice(0, 7).includes(g.date)).length, lifted30 = gd.filter((g) => last30.includes(g.date)).length;
   const start = st.first ? st.first.weight : null, cur = st.last ? st.last.weight : null;
   const pct = start && cur && start > p.goal ? Math.max(0, Math.min(100, ((start - cur) / (start - p.goal)) * 100)) : 0;
+  const streak = logStreak();
+  let grid, empty;
+  if (tab === "food") {
+    grid = fdays.map((d) => foodTile(d));
+    empty = "No food photos yet. Snap your next meal and today's tile starts here.";
+  } else if (tab === "gym") {
+    grid = gd.map((g) => gymTile(g));
+    empty = "No gym days yet. Add photos from the gym, or log a workout from Today.";
+  } else if (tab === "progress") {
+    grid = ps.map((x) => checkinTile(x));
+    empty = "No check-ins yet. Your first one is day one.";
+  } else {
+    // newest day first; within a day: check-in, then gym, then food
+    const items = ps.map((x) => [x.date, 0, checkinTile(x, true)]).concat(gd.map((g) => [g.date, 1, gymTile(g, true)]), fdays.map((d) => [d, 2, foodTile(d, true)]));
+    grid = items.sort((a, b) => (a[0] === b[0] ? a[1] - b[1] : a[0] < b[0] ? 1 : -1)).map((x) => x[2]);
+    empty = "No posts yet. Snap a meal with +, add gym photos, or take your day-one check-in.";
+  }
+  const tabLink = (k, label) => `<a href="#/me${k === "all" ? "" : "/" + k}" class="${tab === k ? "on" : ""}" aria-label="${label}">${TAB_ICONS[k]}${label}</a>`;
   return `
-  <div class="profile">
+  <div class="profile igtop">
     <div class="avatar" ${p.avatar ? `data-photo="${p.avatar}"` : ""}>${p.avatar ? "" : "🙂"}</div>
-    <div style="flex:1;min-width:0">
-      <div class="spread"><b style="font-size:20px">${h(p.name)}</b><button class="btn ghost" style="min-height:0;padding:4px 8px" data-act="editProfile">Edit</button></div>
-      <div class="pstats" style="margin-top:6px">
-        <div><b>${st.ps.length}</b><span>check-ins</span></div>
-        <div><b class="${logStreak() >= 3 ? "ok" : ""}">${logStreak()}</b><span>day log streak</span></div>
-        <div><b class="${checkinStreak() >= 2 ? "ok" : ""}">${checkinStreak()}</b><span>week streak</span></div>
-      </div>
+    <div class="pstats">
+      <div><b>${foodDays().length}</b><span>days logged</span></div>
+      <div><b>${gd.length}</b><span>gym days</span></div>
+      <div><b>${st.ps.length}</b><span>check-ins</span></div>
     </div>
   </div>
+  <div class="bio">
+    <b>${h(p.name)}</b>
+    ${p.bio ? `<p>${h(p.bio)}</p>` : ""}
+    <p class="dim">🔥 <span class="${streak >= 3 ? "ok" : ""}">${streak}-day log streak</span> · 🏋 ${lifted7} this week · 📷 ${checkinStreak()} week streak</p>
+  </div>
+  <div class="igbtns">
+    <button class="btn" data-act="editProfile">Edit profile</button>
+    <button class="btn" data-act="pickGym">+ Gym photos</button>
+    <button class="btn" data-act="newPost">+ Check-in</button>
+  </div>
   <div id="profEdit"></div>
-  <a class="btn block" href="#/talk" style="margin-bottom:8px;justify-content:space-between"><span>💬 Talk</span><span class="dim small" style="font-weight:400">a private chat with Claude ›</span></a>
-  <a class="btn block" href="#/eats" style="margin-bottom:8px;justify-content:space-between"><span>🍽 What I eat</span><span class="dim small" style="font-weight:400">a collage of every day ›</span></a>
-  <a class="btn block" href="#/moments" style="margin-bottom:12px;justify-content:space-between"><span>🌊 Moments</span><span class="dim small" style="font-weight:400">waves, check-ins, patterns ›</span></a>
-  <div class="card">
+  <div class="hls">
+    <button class="hl${streaksOpen ? " on" : ""}" data-act="toggleStreaks"><i>🔥</i>Streaks</button>
+    <a class="hl" href="#/lift"><i>🏋</i>Lift</a>
+    <a class="hl" href="#/talk"><i>💬</i>Talk</a>
+    <a class="hl" href="#/moments"><i>🌊</i>Moments</a>
+  </div>
+  ${streaksOpen ? `<div class="card">
     <div class="spread small" style="margin-bottom:10px"><b>Consistency</b><span class="dim">last 12 weeks</span></div>
     ${heatmap()}
     <p class="small" style="margin:10px 0 0">Logged food <b>${logged30}</b> of the last 30 days · hit protein on <b>${protein30}</b>.</p>
-    <p class="small" style="margin:4px 0 0">${ws.length ? `Lifted <b>${lifted7}</b> time${lifted7 === 1 ? "" : "s"} this week · <b>${lifted30}</b> in the last 30 days.` : `No workouts yet. <a href="#/lift">Start one</a>.`}</p>
+    <p class="small" style="margin:4px 0 0">${gd.length ? `Lifted <b>${lifted7}</b> time${lifted7 === 1 ? "" : "s"} this week · <b>${lifted30}</b> in the last 30 days.` : `No workouts yet. <a href="#/lift">Start one</a>.`}</p>
     <div class="row small dim" style="margin-top:6px;gap:12px;flex-wrap:wrap"><span><i class="key l1"></i> logged</span><span><i class="key l2"></i> hit protein</span><span><i class="key lift"></i> lifted</span><span><span style="color:var(--accent)">●</span> check-in week</span></div>
-  </div>
+  </div>` : ""}
   ${p.showWeight && start ? `<div class="card">
     <div class="spread small"><span class="dim">Start ${lb(start)}</span><span><b>${lb(cur)} lb</b> now</span><span class="dim">Goal ${lb(p.goal)}</span></div>
     <div class="bar"><i style="width:${pct}%;background:var(--accent)"></i></div>
   </div>` : ""}
-  <button class="btn primary block" data-act="newPost" style="margin-bottom:14px">+ New progress post</button>
-  ${ps.length ? `<div class="pgrid">${ps.map((x) => `<a href="#/post/${x.id}" data-photo="${x.photos[0] || ""}" aria-label="Post from ${h(shortMD(x.date))}">
-      ${x.photos.length > 1 ? `<span class="multi">❐</span>` : ""}${p.showWeight && x.weight ? `<span class="w">${lb(x.weight)}</span>` : ""}<span class="d">${h(shortMD(x.date))}</span></a>`).join("")}</div>`
-    : `<p class="dim small" style="text-align:center">No posts yet. Your first one is day one.</p>`}
-  <p class="small dim" style="text-align:center;margin-top:16px">Private. These photos live on this phone${syncOn() && S.settings.backupProgress !== false ? " and in your private backup" : ""} and are never sent to Claude.</p>`;
+  <nav class="igtabs">${tabLink("all", "All")}${tabLink("food", "Food")}${tabLink("gym", "Gym")}${tabLink("progress", "Check-ins")}</nav>
+  ${grid.length ? `<div class="pgrid">${grid.join("")}</div>` : `<p class="dim small" style="text-align:center;margin-top:18px">${empty}</p>`}
+  <p class="small dim" style="text-align:center;margin-top:16px">Private. These photos live on this phone${syncOn() && S.settings.backupProgress !== false ? " and in your private backup" : ""}. Gym and check-in photos are never sent to Claude.</p>`;
 }
 
 function viewPost(r) {
   const p = S.posts.find((x) => x.id === r.args[0] && !x.del);
   if (!p) return `<p class="dim">That post is gone. <a href="#/me">Back to your profile</a></p>`;
+  if (p.kind === "gym") return viewGymPost(p);
   const ps = livePosts(), i = ps.indexOf(p);
   const prevW = ps.slice(0, i).reverse().find((x) => x.weight > 0);
   const firstW = ps.find((x) => x.weight > 0);
@@ -1494,6 +1606,46 @@ function viewPost(r) {
   </div>
   <div class="row"><a class="btn" style="flex:1" href="#/compare/${p.id}">Before / after</a><button class="btn" style="flex:1" data-act="setAvatar" data-id="${p.id}">Make profile pic</button></div>
   <div class="row" style="margin-top:8px"><button class="btn ghost" style="flex:1" data-act="editPost" data-id="${p.id}">Edit</button><button class="btn danger" style="flex:1" data-act="deletePost" data-id="${p.id}">Delete</button></div>`;
+}
+
+function viewGymPost(p) {
+  const ws = liveWorkouts().filter((w) => w.date === p.date);
+  return `
+  <div class="spread" style="margin:4px 0 10px"><a href="#/me/gym" class="small">‹ Profile</a><span class="dim small">${h(longDate(p.date))}</span></div>
+  <div class="carousel">${p.photos.map((id) => `<img data-img="${id}" alt="Gym photo">`).join("")}</div>
+  ${p.photos.length > 1 ? `<div class="dots">${p.photos.length} photos · swipe</div>` : ""}
+  <div class="card" style="margin-top:10px">
+    <b style="font-size:18px">🏋 ${ws.length ? h(ws.map((w) => w.name).join(" + ")) : "Gym day"}</b>
+    ${ws.map((w) => `<a class="wrow" href="#/lift/w/${w.id}"><b>${h(w.name)}</b><span class="dim small">${plural(setsDone(w), "set")} · ${mins(w)} min ›</span></a>`).join("")}
+    ${p.caption ? `<p style="margin:10px 0 0;white-space:pre-wrap">${h(p.caption)}</p>` : ""}
+  </div>
+  <div class="row"><button class="btn" style="flex:1" data-act="pickGym" data-d="${p.date}">+ Add photos</button><button class="btn" style="flex:1" data-act="setAvatar" data-id="${p.id}">Make profile pic</button></div>
+  <div class="row" style="margin-top:8px"><button class="btn ghost" style="flex:1" data-act="editPost" data-id="${p.id}">Edit</button><button class="btn danger" style="flex:1" data-act="deletePost" data-id="${p.id}">Delete</button></div>`;
+}
+
+// picked gym photos, sorted into one group per day; each group posts to (or adds to) that day's gym post
+const MAX_GYM_PHOTOS = 10;
+let gymDate = null;   // set when the picker opens from a workout or a day's post: every photo goes to that day
+function viewNewGym() {
+  const g = S.gdraft;
+  if (!g || !g.groups.length) return `<h1>Gym photos</h1><p class="dim">No photos picked yet.</p>
+    <button class="btn primary block" data-act="pickGym">Pick photos</button><button class="btn ghost block" data-act="cancelGym">Back</button>`;
+  return `
+  <h1>Gym photos</h1>
+  <p class="small dim" style="margin-top:0">${g.groups.length > 1 ? `Sorted into ${g.groups.length} days by when each photo was taken. Fix any day that's off.` : "Check the day, add a note if you want, and post."}</p>
+  ${g.groups.map((grp, gi) => {
+    const ws = liveWorkouts().filter((w) => w.date === grp.date), had = liveGym().some((p) => p.date === grp.date);
+    const info = [ws.length ? "goes with " + ws.map((w) => h(w.name)).join(" + ") : "", had ? "adds to that day's gym post" : ""].filter(Boolean).join(" · ");
+    return `<div class="card gymgroup">
+      <div class="picks">${grp.photos.map((ph, i) => `<div style="background-image:url(${ph})"><button class="x" data-act="dropGymPick" data-g="${gi}" data-i="${i}" aria-label="Remove photo">×</button></div>`).join("")}</div>
+      <label class="field"><span>Day</span><input type="date" data-gbind="date" data-g="${gi}" value="${h(grp.date)}"></label>
+      ${info ? `<div class="small dim" style="margin:-4px 0 10px">${info[0].toUpperCase() + info.slice(1)}</div>` : ""}
+      <label class="field" style="margin:0"><span>Note (optional)</span><input type="text" data-gbind="caption" data-g="${gi}" value="${h(grp.caption || "")}" placeholder="PR on incline, felt strong"></label>
+    </div>`;
+  }).join("")}
+  <button class="btn primary block" data-act="saveGym">Post${g.groups.length > 1 ? " " + g.groups.length + " days" : ""}</button>
+  <button class="btn block" style="margin-top:8px" data-act="pickGym">+ More photos</button>
+  <button class="btn ghost block" data-act="cancelGym">Cancel</button>`;
 }
 
 function viewCompare(r) {
@@ -1521,17 +1673,17 @@ function viewCompare(r) {
 
 function viewNewPost() {
   if (!S.pdraft) S.pdraft = { date: today(), photos: [], weight: "", caption: "" };
-  const d = S.pdraft, last = progressStats().last;
+  const d = S.pdraft, last = progressStats().last, gym = d.kind === "gym";
   return `
-  <h1>${d.editing ? "Edit post" : "New progress post"}</h1>
+  <h1>${gym ? "Edit gym post" : d.editing ? "Edit post" : "New progress post"}</h1>
   ${d.editing ? `<div class="picks">${d.photoIds.map((id) => `<div data-photo="${id}"></div>`).join("")}</div>`
     : `<div class="picks">${d.photos.map((ph, i) => `<div style="background-image:url(${ph})"><button class="x" data-act="dropPick" data-i="${i}" aria-label="Remove photo">×</button></div>`).join("")}
         ${d.photos.length < 6 ? `<button class="add" data-act="pickProgress" aria-label="Add photos">+</button>` : ""}</div>
       <p class="small dim" style="margin-top:0">Front, side and back work best. Same mirror, same light, in the morning before eating, so every week compares fairly.</p>`}
   <div class="card">
     <label class="field"><span>Date</span><input type="date" data-pbind="date" value="${h(d.date)}"></label>
-    <details style="margin-bottom:12px" ${S.profile.showWeight || d.weight ? "open" : ""}><summary class="small dim">Add a weigh-in (optional${S.profile.showWeight ? "" : ", stays hidden on your profile"})</summary>
-      <label class="field" style="margin:10px 0 0"><span>Weight (lb)</span><input type="number" inputmode="decimal" step="0.1" data-pbind="weight" value="${h(d.weight ?? "")}" placeholder="${last ? lb(last.weight) : "e.g. 160.8"}"></label></details>
+    ${gym ? "" : `<details style="margin-bottom:12px" ${S.profile.showWeight || d.weight ? "open" : ""}><summary class="small dim">Add a weigh-in (optional${S.profile.showWeight ? "" : ", stays hidden on your profile"})</summary>
+      <label class="field" style="margin:10px 0 0"><span>Weight (lb)</span><input type="number" inputmode="decimal" step="0.1" data-pbind="weight" value="${h(d.weight ?? "")}" placeholder="${last ? lb(last.weight) : "e.g. 160.8"}"></label></details>`}
     <label class="field" style="margin:0"><span>Note to yourself (optional)</span><textarea data-pbind="caption" placeholder="How you feel, what went well this week">${h(d.caption || "")}</textarea></label>
   </div>
   <button class="btn primary block" data-act="savePost">${d.editing ? "Save changes" : "Post"}</button>
@@ -1702,6 +1854,8 @@ function viewWorkout(r) {
     ${w.note ? `<p class="small" style="margin:8px 0 0;white-space:pre-wrap">${h(w.note)}</p>` : ""}</div>
   <div class="card">${w.exercises.map((ex) => `<div class="item"><div class="info"><b><a href="#/lift/ex/${h(ex.key)}" style="color:inherit;text-decoration:none">${h(ex.name)}</a></b>
     <div class="small dim">${doneSets(ex).length ? h(setsStr(doneSets(ex), " · ")) : "skipped"}</div></div></div>`).join("")}</div>
+  ${(() => { const gp = liveGym().find((p) => p.date === w.date);
+    return gp ? `<a class="btn block" href="#/post/${gp.id}" style="margin-bottom:8px">📷 See the gym photos</a>` : `<button class="btn block" style="margin-bottom:8px" data-act="pickGym" data-d="${w.date}">📷 Add gym photos</button>`; })()}
   <div class="row"><button class="btn" style="flex:1" data-act="editW" data-id="${w.id}">Edit</button><button class="btn danger" style="flex:1" data-act="deleteW" data-id="${w.id}">Delete</button></div>`;
 }
 
@@ -1958,7 +2112,7 @@ function viewTalkList() {
   const talks = S.talks.slice().sort((a, b) => (b.u || b.at) - (a.u || a.at));
   const notes = S.talkNotes.text;
   return `
-  <div class="spread" style="margin:4px 0 10px"><a href="#/me" class="small">‹ Progress</a></div>
+  <div class="spread" style="margin:4px 0 10px"><a href="#/me" class="small">‹ Profile</a></div>
   <h1 style="margin-top:0">Talk</h1>
   <p class="small dim" style="margin-top:-6px">A private chat with Claude as a friend who's also a mentor. Think out loud about whatever's on your mind.</p>
   <a class="btn block wavebtn" href="#/wave">🌊 Riding a wave</a>
@@ -2259,7 +2413,7 @@ function viewMoments() {
     <p class="small dim" style="margin:8px 0 0">The voice recorder stays with the voice-note step and the Text / Open Talk buttons with the reach-out step.</p></div>`;
   const pendingDel = (S.meta.remoteDeletes || []).length && syncOn();
   return `
-  <div class="spread" style="margin:4px 0 10px"><a href="#/me" class="small">‹ Progress</a><a href="#/patterns" class="small">Patterns ›</a></div>
+  <div class="spread" style="margin:4px 0 10px"><a href="#/me" class="small">‹ Profile</a><a href="#/patterns" class="small">Patterns ›</a></div>
   <h1 style="margin-top:0">Moments</h1>
   <p class="small dim" style="margin-top:-6px">Waves, quick check-ins, and the small things that help. Private by default.</p>
   <a class="btn block wavebtn" href="#/wave">🌊 Riding a wave</a>
@@ -2806,7 +2960,7 @@ const ACT = {
   editPost(b) {
     const p = S.posts.find((x) => x.id === b.dataset.id);
     if (!p) return;
-    S.pdraft = { editing: true, id: p.id, date: p.date, weight: p.weight ?? "", caption: p.caption || "", photoIds: p.photos };
+    S.pdraft = { editing: true, id: p.id, kind: p.kind, date: p.date, weight: p.weight ?? "", caption: p.caption || "", photoIds: p.photos };
     savePdraft();
     go("#/newpost");
   },
@@ -2829,6 +2983,54 @@ const ACT = {
     toast("Profile picture updated");
   },
   cmpPose(b) { go("#/compare/" + b.dataset.a + "/" + b.dataset.b + "/" + b.dataset.k); },
+  toggleStreaks() { streaksOpen = !streaksOpen; try { localStorage.setItem("plate-streaks", streaksOpen ? "1" : "0"); } catch {} render(); },
+  // straight from the tap: Safari only opens the photo picker inside the gesture
+  pickGym(b) { gymDate = (b && b.dataset.d) || null; $("gymIn").value = ""; $("gymIn").click(); },
+  dropGymPick(b) {
+    const g = S.gdraft, grp = g && g.groups[+b.dataset.g];
+    if (!grp) return;
+    grp.photos.splice(+b.dataset.i, 1);
+    if (!grp.photos.length) g.groups.splice(+b.dataset.g, 1);
+    put("gdraft", g);
+    render();
+  },
+  async cancelGym() { S.gdraft = null; await put("gdraft", null); go("#/me/gym"); },
+  async saveGym() {
+    const g = S.gdraft;
+    if (!g) return go("#/me/gym");
+    let last = null, n = 0;
+    for (const grp of g.groups) {
+      if (!grp.photos.length) continue;
+      const date = /^\d{4}-\d{2}-\d{2}$/.test(grp.date || "") ? grp.date : today(), caption = (grp.caption || "").trim();
+      const ids = [];
+      for (const ph of grp.photos) {
+        const pid = uid();
+        await put("photo:" + pid, ph);
+        S.photos.set(pid, ph);
+        ids.push(pid);
+        if (S.settings.backupProgress !== false) S.meta.photoQueue.push(pid);
+      }
+      // one gym post per day: a second batch for the same day joins the first
+      const i = S.posts.findIndex((p) => !p.del && p.kind === "gym" && p.date === date);
+      if (i >= 0) {
+        const p = S.posts[i];
+        last = S.posts[i] = Object.assign({}, p, { photos: p.photos.concat(ids), caption: [p.caption, caption].filter(Boolean).join("\n"), u: Date.now() });
+      } else {
+        last = { id: uid(), kind: "gym", date, at: Date.now(), photos: ids, caption, u: Date.now() };
+        S.posts.push(last);
+      }
+      n++;
+    }
+    if (!n) return toast("Add at least one photo first.");
+    if (!S.profile.avatar) { S.profile.avatar = last.photos[0]; S.profile.u = Date.now(); await put("profile", S.profile); }
+    await saveMeta();
+    await put("posts", S.posts);
+    S.gdraft = null;
+    await put("gdraft", null);
+    scheduleSync(2000);
+    go(n === 1 ? "#/post/" + last.id : "#/me/gym");
+    toast(n === 1 ? "Posted" : "Posted " + n + " gym days");
+  },
   editProfile() {
     $("profEdit").innerHTML = `<div class="card">
       <label class="field"><span>Name</span><input type="text" id="pf_name" value="${h(S.profile.name)}"></label>
@@ -2923,6 +3125,7 @@ const ACT = {
   },
   dropItem(b) { S.draft.items.splice(+b.dataset.i, 1); S.draft.override = {}; saveDraft(); render(); },
   servings(b) { S.draft.servings = +b.dataset.v; S.draft.override = {}; saveDraft(); render(); },
+  itemAmt(b) { const it = S.draft.items[+b.dataset.i]; if (!it) return; it.amt = +b.dataset.v; S.draft.override = {}; saveDraft(); render(); },
   async redo(b) {
     const d = S.draft, fix = ($("fixText").value || "").trim();
     if (!fix) return statusMsg("Say what's off first, like \"it was 6 oz\".", true);
@@ -3074,7 +3277,8 @@ const ACT = {
     restBar();
     scheduleSync(2000);
     go(d.editing ? "#/lift/w/" + w.id : "#/");
-    toast(d.editing ? "Saved" : w.name + " done · " + setsDone(w) + " sets · " + mins(w) + " min");
+    if (d.editing) toast("Saved");
+    else toast(w.name + " done · " + setsDone(w) + " sets · " + mins(w) + " min", "Add photo", () => ACT.pickGym({ dataset: { d: w.date } }), 8000);
   },
   async discardW(b) {
     // two taps instead of a confirm() dialog
@@ -3201,6 +3405,7 @@ view.addEventListener("input", (e) => {
   if (t.dataset.fbind && fdraft) { fdraft[t.dataset.fbind] = t.value; return saveFdraft(); }
   if (t.id === "winIn") return setWin(t.value);
   if (t.dataset.pbind && S.pdraft) { S.pdraft[t.dataset.pbind] = t.value; return savePdraft(); }
+  if (t.dataset.gbind && S.gdraft) { const grp = S.gdraft.groups[+t.dataset.g]; if (grp) grp[t.dataset.gbind] = t.value; return put("gdraft", S.gdraft); }
   if (t.dataset.wb && S.wdraft) {
     const d = S.wdraft, k = t.dataset.wb;
     if (k === "note") d.note = t.value; else d.exercises[+t.dataset.i].sets[+t.dataset.j][k] = t.value;
@@ -3242,6 +3447,7 @@ view.addEventListener("change", async (e) => {
   if (t.dataset.bind === "saveFav" && S.draft) { S.draft.saveFav = t.checked; saveDraft(); return; }
   if (t.id === "talkAbout") { clearTimeout(aboutTimer); aboutTimer = 0; S.talkAbout = t.value; return put("talkAbout", S.talkAbout); }   // blur: write it now
   if (t.dataset.cmp) return go("#/compare/" + t.dataset.cmp + "/" + t.value);
+  if (t.dataset.gbind === "date") return render();   // the "goes with Upper A" line follows the new day
   const k = t.dataset.set;
   if (!k) return;
   let v = t.type === "checkbox" ? t.checked : t.value.trim();
@@ -3302,6 +3508,25 @@ $("progIn").addEventListener("change", async () => {
   }
   await savePdraft();
   render();
+});
+$("gymIn").addEventListener("change", async () => {
+  const files = [...$("gymIn").files];
+  if (!files.length) return;
+  const g = S.gdraft || (S.gdraft = { groups: [] });
+  for (const f of files.slice(0, 30)) {
+    try {
+      // the day the photo was taken (a 1 AM photo counts for the night before, like food), unless he came from a workout
+      const date = gymDate || waveDay((await takenAt(f)) || f.lastModified || Date.now());
+      const photo = scaled(await loadImage(f), 1080, 0.82);
+      let grp = g.groups.find((x) => x.date === date);
+      if (!grp) g.groups.push((grp = { date, photos: [], caption: "" }));
+      if (grp.photos.length < MAX_GYM_PHOTOS) grp.photos.push(photo);
+    } catch { toast("Couldn't open one of those photos."); }
+  }
+  g.groups.sort((a, b) => (a.date < b.date ? 1 : -1));
+  gymDate = null;
+  await put("gdraft", S.gdraft);
+  go("#/newgym");
 });
 // going to the background (or being closed): iOS may never bring this page back, so save what the debounces are holding
 window.addEventListener("pagehide", flushDrafts);

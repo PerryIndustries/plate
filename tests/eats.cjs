@@ -95,8 +95,8 @@ async function fakeClaude(route) {
   ok(await page.locator('a[href^="#/eats/"]:has-text("Collage")').count() === 1, "Today's Food card links to the collage");
 
   await page.goto("http://localhost:8770/#/me");
-  ok(await page.locator('a[href="#/eats"]').count() === 1, "profile has a What I eat button");
-  await page.click('a[href="#/eats"]');
+  ok(await page.locator('.igtabs a[href="#/me/food"]').count() === 1, "profile has a Food tab");
+  await page.click('.igtabs a[href="#/me/food"]');
   await page.waitForSelector(".pgrid a.mos");
   ok(await page.locator(".pgrid a.mos").count() === 1, "one day tile");
   ok(await page.locator(".pgrid a.mos.n4 div").count() === 4, "tile is a 2x2 of the day's four meals");

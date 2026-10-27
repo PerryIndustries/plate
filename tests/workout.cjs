@@ -222,6 +222,7 @@ const until = async (f, ms = 15000) => { const t0 = Date.now(); while (!f()) { i
 
   // progress profile: lift day on the heatmap + the consistency line
   await page.goto(URL0 + "#/me");
+  await page.click('[data-act="toggleStreaks"]');   // the heatmap sits behind the Streaks highlight
   await page.waitForSelector(".heat");
   const me = await text();
   ok(await page.locator(".heat i.lift").count() === 1, "heatmap marks the lift day");

@@ -93,6 +93,9 @@ async function fakeGitHub(route) {
 
   await page.goto("http://localhost:8767/#/me");
   await page.waitForSelector(".pgrid a");
+  ok(await page.locator(".heat").count() === 0, "heatmap folded behind Streaks by default");
+  await page.click('[data-act="toggleStreaks"]');
+  await page.waitForSelector(".heat");
   const t = await text();
   ok(await page.locator(".pgrid a").count() === 2, "grid shows 2 posts");
   ok(t.includes("check-ins") && t.includes("week streak") && !t.includes("159.2"), "profile shows consistency, not weight", t);
