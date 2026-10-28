@@ -189,6 +189,7 @@
   .pgrid .w { position: absolute; left: 6px; bottom: 6px; font-size: 12px; font-weight: 700; color: #fff;
     background: rgba(0,0,0,.55); padding: 2px 6px; border-radius: 6px; }
   .pgrid .d { position: absolute; right: 6px; bottom: 6px; font-size: 11px; color: #fff; background: rgba(0,0,0,.55); padding: 2px 6px; border-radius: 6px; }
+  .pgrid a.fd .w { top: 6px; bottom: auto; right: 6px; font-size: 11px; line-height: 1.25; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; justify-self: start; max-width: calc(100% - 24px); width: fit-content; }
   .pgrid a.mos { aspect-ratio: 3 / 4; display: grid; gap: 2px; grid-template: 1fr / 1fr; }
   .mos div { background: var(--card2) center/cover no-repeat; min-height: 0; }
   .mos.n2 { grid-template-rows: 1fr 1fr; }
@@ -366,17 +367,18 @@ Work carefully, like a dietitian weighing the plate in their head:
 4. Count cooking oil, butter, sauces, dressings, cheese and drinks that are visible, mentioned, or almost certainly used (restaurant meat and fried rice carry oil). Food logs usually undercount these.
 5. Check yourself: each item's calories should be close to 4 x protein + 4 x carbs + 9 x fat, and the meal total should be believable for what is in the picture. Fix anything that is off before answering.
 
-Saved meals the person logs often may be listed below; when this meal matches one, keep the estimate consistent with it.
+Saved meals the person logs often, and what he has logged before, may be listed below; when this meal matches one (the same restaurant order, the same bowl he makes at home), keep the estimate consistent with it, adjusted only for what is visibly or stated differently this time. A past entry's own words (in quotes) are his corrections and details, so they are more reliable than a photo guess.
 
 Split the meal into its main components, one item per distinct food. For each item give a short name, the portion you assumed in plain words with grams ("8 oz cooked (225 g)", "1 cup (160 g)", "3 corn tortillas (75 g)"), and calories plus protein, carbs, fat and fiber in grams for that portion.
 
 title: a short name for the meal, under 40 characters.
 confidence: "high" when amounts are known (label, weighed, stated), "medium" when portions are judged from a clear photo, "low" when guessing.
-note: one short sentence naming the biggest uncertainty (for example the oil, or how much rice), or an empty string.`;
+note: one short sentence naming the biggest uncertainty (for example the oil, or how much rice), or an empty string.
+shots: how the photos show on his food grid, one shot per separate food. Photos are numbered from 1 in the order given. If several photos show the same food (other angles, a label), list it once, from the clearest photo. If photos show different foods, give each its own shot. If one photo is a collage of several pictures, or clearly shows separate meals or dishes apart from each other, give each its own shot with a box around just that food; a plate with its side and drink stays one shot. box is the food's edges as fractions of the photo (0 to 1, from the top-left); use 0, 0, 1, 1 for the whole photo. name is a short name for what that shot shows. With no photos, shots is empty.`;
 
 const NUM = { type: "number" };
 const SCHEMA = {
-  type: "object", additionalProperties: false, required: ["title", "items", "confidence", "note"],
+  type: "object", additionalProperties: false, required: ["title", "items", "confidence", "note", "shots"],
   properties: {
     title: { type: "string" },
     items: { type: "array", items: { type: "object", additionalProperties: false,
@@ -384,6 +386,9 @@ const SCHEMA = {
       properties: { name: { type: "string" }, portion: { type: "string" }, calories: NUM, protein: NUM, carbs: NUM, fat: NUM, fiber: NUM } } },
     confidence: { type: "string", enum: ["high", "medium", "low"] },
     note: { type: "string" },
+    shots: { type: "array", items: { type: "object", additionalProperties: false, required: ["photo", "name", "box"],
+      properties: { photo: { type: "integer" }, name: { type: "string" }, box: { type: "object", additionalProperties: false,
+        required: ["left", "top", "right", "bottom"], properties: { left: NUM, top: NUM, right: NUM, bottom: NUM } } } } },
   },
 };
 
@@ -644,10 +649,28 @@ async function photoData(id) {
   if (d) S.photos.set(id, d);
   return d;
 }
+// one food's part of a photo (data-crop="left,top,right,bottom" as fractions), cut once per session
+const CROPS = new Map();
+async function cropped(id, data, crop) {
+  const key = id + "|" + crop;
+  if (!CROPS.has(key)) CROPS.set(key, (async () => {
+    const [l, t, r, b] = crop.split(",").map(Number), img = new Image();
+    img.src = data;
+    try { await img.decode(); } catch { return data; }
+    const sx = l * img.naturalWidth, sy = t * img.naturalHeight, sw = (r - l) * img.naturalWidth, sh = (b - t) * img.naturalHeight;
+    const c = document.createElement("canvas");
+    c.width = Math.max(1, Math.round(sw));
+    c.height = Math.max(1, Math.round(sh));
+    c.getContext("2d").drawImage(img, sx, sy, sw, sh, 0, 0, c.width, c.height);
+    return c.toDataURL("image/jpeg", 0.8);
+  })());
+  return CROPS.get(key);
+}
 // fill <div data-photo="id"> backgrounds and <img data-img="id"> sources after a render
 function hydratePhotos() {
   view.querySelectorAll("[data-photo]").forEach(async (el) => {
-    const d = await photoData(el.dataset.photo);
+    let d = await photoData(el.dataset.photo);
+    if (d && el.dataset.crop) d = await cropped(el.dataset.photo, d, el.dataset.crop);
     if (!d) return;
     el.style.backgroundImage = "url(" + d + ")";
     if (el.classList.contains("thumb") || el.classList.contains("avatar")) el.textContent = "";
@@ -727,11 +750,35 @@ function savedMealsNote() {
   if (!favs.length) return "";
   return "\n\nSaved meals:\n" + favs.map((f) => "- " + f.title + (f.sub ? " (" + f.sub + ")" : "") + ": " + r0(f.cal) + " cal, " + r0(f.p) + " g protein, " + r0(f.c) + " g carbs, " + r0(f.f) + " g fat").join("\n");
 }
+// what he has actually logged lately, one line per distinct meal, so a repeat (same order, same bowl) gets the same numbers
+const PAST_DAYS = 90, MAX_PAST = 60;
+function pastMealsNote() {
+  const from = shiftDay(today(), -PAST_DAYS), byTitle = new Map();
+  for (const date of Object.keys(S.days).filter((d) => d >= from).sort()) {
+    for (const e of liveEntries(date)) {
+      const k = (e.title || "").trim().toLowerCase();
+      if (!k) continue;
+      const g = byTitle.get(k) || { n: 0 };
+      byTitle.set(k, { n: g.n + 1, e, date });   // dates run oldest to newest, so the last one kept is the latest
+    }
+  }
+  const groups = [...byTitle.values()].sort((a, b) => b.n - a.n || (a.date < b.date ? 1 : -1)).slice(0, MAX_PAST);
+  if (!groups.length) return "";
+  return "\n\nWhat he has logged in the last " + PAST_DAYS + " days (latest time for each, as he logged it):\n" + groups.map(({ n, e, date }) => {
+    const items = (e.items || []).map((i) => i.name + (i.portion ? " " + i.portion : "")).concat((e.adds || []).map((a) => (a.name || "extra") + " " + r0(a.cal) + " cal")).join("; ");
+    const words = (e.text || "").trim().slice(0, 120);
+    return "- " + e.title + " (" + (n > 1 ? n + " times, last " : "") + date + ")" + (items ? ": " + items : "") + (+e.servings && e.servings !== 1 ? " x" + e.servings : "")
+      + (words ? ' "' + words + '"' : "") + " = " + r0(e.cal) + " cal, " + r0(e.p) + " g protein, " + r0(e.c) + " g carbs, " + r0(e.f) + " g fat";
+  }).join("\n");
+}
 async function estimate({ photos, text, previous, correction }) {
   const client = await claude();
   const content = [];
   photos = (photos || []).filter(Boolean);
-  for (const ph of photos) content.push({ type: "image", source: { type: "base64", media_type: "image/jpeg", data: ph.split(",")[1] } });
+  photos.forEach((ph, i) => {
+    if (photos.length > 1) content.push({ type: "text", text: "Photo " + (i + 1) + ":" });
+    content.push({ type: "image", source: { type: "base64", media_type: "image/jpeg", data: ph.split(",")[1] } });
+  });
   let ask = text ? "What I ate: " + text : photos.length > 1 ? "Estimate the meal in the photos." : "Estimate the meal in the photo.";
   if (photos.length > 1) ask += "\n\nThese " + photos.length + " photos are all one meal (other angles, more plates or a label). Count each food once.";
   if (previous) ask += "\n\nYour earlier estimate:\n" + JSON.stringify(previous) + "\n\nMy correction: " + correction + "\n\nGive the full corrected estimate.";
@@ -744,7 +791,7 @@ async function estimate({ photos, text, previous, correction }) {
       betas: ["server-side-fallback-2026-07-01"],
       fallbacks: "default",
       output_config: { effort: "high", format: { type: "json_schema", schema: SCHEMA } },
-      system: SYSTEM + savedMealsNote(),
+      system: SYSTEM + savedMealsNote() + pastMealsNote(),
       messages: [{ role: "user", content }],
     });
   } catch (e) { throw claudeError(e); }
@@ -753,7 +800,22 @@ async function estimate({ photos, text, previous, correction }) {
   if (res.stop_reason === "max_tokens") throw new Error("The answer got cut off. Try again.");
   const out = textOf(res);
   if (!out) throw new Error("Claude sent back nothing. Try again.");
-  return JSON.parse(out);
+  const est = JSON.parse(out);
+  est.shots = cleanShots(est.shots, photos.length);
+  return est;
+}
+// Claude's shots as [{i: photo index from 0, name, box: [l, t, r, b] or null for the whole photo}]; with none named, the first photo shows
+function cleanShots(shots, nPhotos) {
+  const clamp = (v) => Math.max(0, Math.min(1, +v || 0));
+  const out = [];
+  for (const s of shots || []) {
+    const i = Math.round(+s.photo) - 1;
+    if (!(i >= 0 && i < nPhotos)) continue;
+    const b = s.box || {}, l = clamp(b.left), t = clamp(b.top), r = clamp(b.right), bt = clamp(b.bottom);
+    const whole = r - l < 0.12 || bt - t < 0.12 || (l < 0.03 && t < 0.03 && r > 0.97 && bt > 0.97);
+    out.push({ i, name: String(s.name || "").trim().slice(0, 60), box: whole ? null : [l, t, r, bt].map((v) => Math.round(v * 1000) / 1000) });
+  }
+  return out.length || !nPhotos ? out : [{ i: 0, name: "", box: null }];
 }
 
 // ---------- GitHub backup + steps ----------
@@ -1115,13 +1177,21 @@ function viewDay(r) {
 
 // ---------- what I eat: one collage per day, laid out like an Instagram grid ----------
 const MAX_COLLAGE = 9;
-// one photo per meal; a day with only a few meals also shows the extra angles
+// every separate food in a meal's photos: {id, box, name, e}. Claude's shots say which photos (or which part of a collage) are
+// different foods; a meal saved before shots existed shows each of its photos
+function entryShots(e) {
+  if (!e.photo) return [];
+  const named = (e.shots || []).filter((s) => s.photo === e.photo || (e.more || []).includes(s.photo));
+  const list = named.length ? named.map((s) => ({ id: s.photo, box: s.box || null, name: s.name })) : [e.photo, ...(e.more || [])].map((id) => ({ id, box: null, name: "" }));
+  return list.map((s) => ({ ...s, name: (list.length > 1 && s.name) || e.title, e }));
+}
+// one photo per meal; a day with only a few meals also shows the meals' other foods
 function dayPhotos(date) {
-  const es = liveEntries(date).filter((e) => e.photo);
-  const main = es.map((e) => ({ id: e.photo, e }));
-  const extra = es.flatMap((e) => (e.more || []).map((id) => ({ id, e })));
+  const per = liveEntries(date).map(entryShots).filter((l) => l.length);
+  const main = per.map((l) => l[0]), extra = per.flatMap((l) => l.slice(1));
   return main.length >= 4 ? main.slice(0, MAX_COLLAGE) : main.concat(extra).slice(0, Math.max(main.length, 4));
 }
+const cropAttr = (p) => (p.box ? ` data-crop="${p.box.join(",")}"` : "");
 const photoDays = () => Object.keys(S.days).filter((d) => dayPhotos(d).length).sort().reverse();
 
 function viewEats(r) {
@@ -1169,7 +1239,7 @@ function cells(n, x, y, w, ht, gap) {
 }
 async function drawCollage(date) {
   const ps = dayPhotos(date), t = totals(date);
-  const sig = date + "|" + ps.map((p) => p.id + p.e.title + p.e.time).join(",") + "|" + r0(t.cal) + "|" + r0(t.p);
+  const sig = date + "|" + ps.map((p) => p.id + p.box + p.name + p.e.time).join(",") + "|" + r0(t.cal) + "|" + r0(t.p);
   if (collage.sig === sig) return;
   const imgs = await Promise.all(ps.map(async (p) => {
     const d = await photoData(p.id);
@@ -1208,9 +1278,11 @@ async function drawCollage(date) {
     x.clip();
     x.fillStyle = "#202422";
     x.fillRect(cx, cy, cw, ch);
-    if (img) {   // cover: crop the photo to fill the cell
-      const k = Math.max(cw / img.naturalWidth, ch / img.naturalHeight), iw = img.naturalWidth * k, ih = img.naturalHeight * k;
-      x.drawImage(img, cx + (cw - iw) / 2, cy + (ch - ih) / 2, iw, ih);
+    if (img) {   // cover: crop the photo (or just this food's part of it) to fill the cell
+      const [l, t, r, b] = p.box || [0, 0, 1, 1], W0 = img.naturalWidth, H0 = img.naturalHeight;
+      const sx = l * W0, sy = t * H0, sw = (r - l) * W0, sh = (b - t) * H0;
+      const k = Math.max(cw / sw, ch / sh), iw = sw * k, ih = sh * k;
+      x.drawImage(img, sx, sy, sw, sh, cx + (cw - iw) / 2, cy + (ch - ih) / 2, iw, ih);
     }
     const gr = x.createLinearGradient(0, cy + ch - 90, 0, cy + ch);
     gr.addColorStop(0, "rgba(0,0,0,0)");
@@ -1220,7 +1292,7 @@ async function drawCollage(date) {
     const px = cw < 400 ? 22 : 26;
     x.font = font(700, px);
     x.fillStyle = "#fff";
-    let label = niceTime(p.e.time) + " · " + p.e.title;
+    let label = niceTime(p.e.time) + " · " + p.name;
     while (label.length > 4 && x.measureText(label).width > cw - 28) label = label.slice(0, -2).trimEnd() + "…";
     x.fillText(label, cx + 14, cy + ch - 16);
     x.restore();
@@ -1536,8 +1608,16 @@ try { streaksOpen = localStorage.getItem("plate-streaks") === "1"; } catch {}
 // grid tiles; in the mixed grid a corner badge says which kind each one is
 function foodTile(d, badge) {
   const ps = dayPhotos(d), n = Math.min(ps.length, 4), t = totals(d);
-  return `<a href="#/eats/${d}" class="mos n${n}" aria-label="Food on ${h(shortMD(d))}">${ps.slice(0, n).map((p) => `<div data-photo="${p.id}"></div>`).join("")}
+  return `<a href="#/eats/${d}" class="mos n${n}" aria-label="Food on ${h(shortMD(d))}">${ps.slice(0, n).map((p) => `<div data-photo="${p.id}"${cropAttr(p)}></div>`).join("")}
     ${badge ? `<span class="k">🍽</span>` : ""}${ps.length > 4 ? `<span class="multi">❐</span>` : ""}<span class="w">${fmt(t.cal)}</span><span class="d">${h(shortMD(d))}</span></a>`;
+}
+// the Food tab: every separate food he has had, newest first, one tile each
+function allFoods() {
+  return Object.keys(S.days).sort().reverse().flatMap((d) => liveEntries(d).reverse().flatMap((e) => entryShots(e).map((p) => ({ ...p, date: d }))));
+}
+function oneFoodTile(p) {
+  return `<a href="#/eats/${p.date}" class="fd" data-photo="${p.id}"${cropAttr(p)} aria-label="${h(p.name)} on ${h(shortMD(p.date))}">
+    <span class="w">${h(p.name)}</span><span class="d">${h(shortMD(p.date))}</span></a>`;
 }
 function gymTile(g, badge) {
   const w = g.ws[g.ws.length - 1], k = badge ? `<span class="k">🏋</span>` : "";
@@ -1568,7 +1648,7 @@ function viewMe(r) {
   const streak = logStreak();
   let grid, empty;
   if (tab === "food") {
-    grid = fdays.map((d) => foodTile(d));
+    grid = allFoods().map(oneFoodTile);
     empty = "No food photos yet. Snap your next meal and today's tile starts here.";
   } else if (tab === "gym") {
     grid = gd.map((g) => gymTile(g));
@@ -3123,9 +3203,10 @@ const ACT = {
   dropFoodPhoto(b) {
     const d = S.draft;
     if (!d) return render();
-    const left = foodPhotos(d);
-    left.splice(+b.dataset.i, 1);
+    const left = foodPhotos(d), gone = +b.dataset.i;
+    left.splice(gone, 1);
     setFoodPhotos(d, left);
+    if (d.shots) d.shots = d.shots.filter((s) => s.i !== gone).map((s) => (s.i > gone ? { ...s, i: s.i - 1 } : s));
     saveDraft();
     render();
   },
@@ -3195,7 +3276,7 @@ const ACT = {
       const previous = { title: d.title, items: d.items, servings: d.servings };
       const est = await estimate({ photos: foodPhotos(d).map((ph) => ph.big || ph.photo), text: d.text, previous, correction: fix });
       d.text = d.text ? d.text + " (" + fix + ")" : fix;
-      Object.assign(d, { title: est.title, items: est.items, confidence: est.confidence, note: est.note, servings: 1, override: {} });
+      Object.assign(d, { title: est.title, items: est.items, confidence: est.confidence, note: est.note, shots: est.shots, servings: 1, override: {} });
       saveDraft();
       render();
       toast("Updated");
@@ -3225,9 +3306,13 @@ const ACT = {
       }
       more.push(id);
     }
+    // each separate food in the photos, by photo id, for the profile grid (a photo that left the draft drops its shots)
+    const ids = photoId ? [photoId, ...more] : [];
+    const shots = (d.shots || []).filter((s) => ids[s.i]).map((s) => ({ photo: ids[s.i], name: s.name || "", ...(s.box ? { box: s.box } : {}) }));
     const entry = { id: d.id || uid(), time: d.time || nowHM(), title: (d.title || "Food").trim(), items: d.items, servings: +d.servings || 1,
       cal: r0(t.cal), p: r0(t.p), c: r0(t.c), f: r0(t.f), fiber: r0(t.fiber), photo: photoId, ...(more.length ? { more } : {}), text: d.text || "",
-      note: d.note || "", confidence: d.confidence || "", src: d.src || "manual", ...(d.adds && d.adds.length ? { adds: d.adds } : {}) };
+      note: d.note || "", confidence: d.confidence || "", src: d.src || "manual", ...(d.adds && d.adds.length ? { adds: d.adds } : {}),
+      ...(shots.length ? { shots } : {}) };
     await putEntry(d.date, entry);
     if (d.saveFav) {
       S.favs.push({ id: uid(), title: entry.title, sub: d.items.map((i) => i.name).slice(0, 4).join(", "), items: d.items, ...(entry.adds ? { adds: entry.adds } : {}),
@@ -3266,6 +3351,7 @@ const ACT = {
     S.draft = { more, stage: "review", editing: true, id: e.id, date: b.dataset.d, time: e.time, title: e.title, items: structuredClone(e.items || []),
       servings: e.servings || 1, photo, photoId: e.photo, big: null, text: e.text || "", note: e.note, confidence: e.confidence, src: e.src,
       adds: structuredClone(e.adds || []),
+      ...(e.shots ? { shots: e.shots.map((s) => ({ i: [e.photo, ...(e.more || [])].indexOf(s.photo), name: s.name, box: s.box || null })).filter((s) => s.i >= 0) } : {}),
       base: Object.fromEntries(["cal", "p", "c", "f", "fiber"].map((k) => [k, ((+e[k] || 0) - (addsSum(e)[k] || 0)) / (e.servings || 1)])),
       // keep the saved numbers exactly as they were unless something changes
       override: { cal: e.cal, p: e.p, c: e.c, f: e.f } };
@@ -3435,7 +3521,7 @@ function ensureInputDraft(date) {
 }
 function toReview(d, est) {
   S.draft = Object.assign(d, { stage: "review", time: d.date === today() ? nowHM() : "12:00", title: est.title, items: est.items,
-    confidence: est.confidence, note: est.note, servings: 1, override: {}, src: d.photo ? "photo" : "text", saveFav: false });
+    confidence: est.confidence, note: est.note, shots: est.shots, servings: 1, override: {}, src: d.photo ? "photo" : "text", saveFav: false });
   saveDraft();
   go("#/review");
 }

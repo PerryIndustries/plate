@@ -96,7 +96,6 @@ async function fakeClaude(route) {
 
   await page.goto("http://localhost:8770/#/me");
   ok(await page.locator('.igtabs a[href="#/me/food"]').count() === 1, "profile has a Food tab");
-  await page.click('.igtabs a[href="#/me/food"]');
   await page.waitForSelector(".pgrid a.mos");
   ok(await page.locator(".pgrid a.mos").count() === 1, "one day tile");
   ok(await page.locator(".pgrid a.mos.n4 div").count() === 4, "tile is a 2x2 of the day's four meals");
@@ -116,13 +115,16 @@ async function fakeClaude(route) {
   ok(last.n === 1 && last.active && /^plate-\d{4}-\d{2}-\d{2}\.jpg$/.test(last.names[0]), "collage shares as one jpg from the tap", JSON.stringify(last));
   await page.screenshot({ path: path.join(__dirname, "eats.png"), fullPage: false });
 
-  // a three-meal day fills the fourth spot with meal one's second angle
-  await page.click('.entry:has-text("Meal 4")');
+    await page.click('.entry:has-text("Meal 4")');
   await page.click('[data-act="deleteEntry"]');
   await page.waitForFunction(() => document.querySelectorAll(".entry").length === 3);
-  await page.goto("http://localhost:8770/#/eats");
+  // meal one's second photo is another angle of the same food (no shots from Claude means one), so it doesn't pad the day
+  await page.goto("http://localhost:8770/#/me");
   await page.waitForSelector(".pgrid a.mos");
-  ok(await page.locator(".pgrid a.mos.n4 div").count() === 4 && (await text()).includes("1,500"), "three meals plus an extra angle after a delete", await text());
+  ok(await page.locator(".pgrid a.mos.n3 div").count() === 3 && (await text()).includes("1,500"), "three meals after a delete, the extra angle left out", await text());
+  await page.goto("http://localhost:8770/#/eats");
+  await page.waitForSelector(".pgrid a.fd");
+  ok(await page.locator(".pgrid a.fd").count() === 3, "the Food tab (where #/eats lands) has one tile per food");
 
   await page.goto("http://localhost:8770/#/eats/2020-01-01");
   ok((await text()).includes("No food photos that day"), "empty day says so");

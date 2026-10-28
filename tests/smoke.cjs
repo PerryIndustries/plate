@@ -117,13 +117,13 @@ async function fakeClaude(route) {
   await page.click('[data-act="estimate"]');
   await page.waitForSelector('[data-act="saveEntry"]', { timeout: 30000 });
   ok(claudeReq && claudeReq.body.model === "claude-opus-5-5", "Claude called with opus 5.5");
-  ok(claudeReq && claudeReq.body.messages[0].content[0].type === "image", "photo sent as image block");
+  ok(claudeReq && claudeReq.body.messages[0].content.some((b) => b.type === "image"), "photo sent as image block");
   ok(claudeReq && claudeReq.body.output_config.format.type === "json_schema", "structured output requested");
   ok(claudeReq && claudeReq.body.messages[0].content.filter((c) => c.type === "image").length === 2, "both photos sent to Claude");
   ok(claudeReq && claudeReq.body.output_config.effort === "high", "estimates think at high effort");
   ok(claudeReq && claudeReq.body.fallbacks === "default" && /server-side-fallback-2026-07-01/.test(claudeReq.headers["anthropic-beta"] || ""), "fallbacks on");
   ok(claudeReq && claudeReq.headers["anthropic-dangerous-direct-browser-access"] === "true", "browser access header");
-  const b64len = claudeReq.body.messages[0].content[0].source.data.length;
+  const b64len = claudeReq.body.messages[0].content.find((b) => b.type === "image").source.data.length;
   ok(b64len < 900000, "photo shrunk before sending", b64len);
   ok((await page.inputValue('input[data-k="cal"]')) === "700", "estimate totals 700");
   await page.click('[data-act="dropItem"][data-i="1"]');
