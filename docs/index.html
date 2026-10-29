@@ -86,6 +86,12 @@
   .steps b { font-size: 24px; }
 
   /* add screen */
+  .past { display: flex; gap: 10px; align-items: center; background: var(--card2); border-radius: 12px; padding: 10px; margin-bottom: 8px; }
+  .past .thumb { width: 44px; height: 44px; }
+  .past .grow { flex: 1; min-width: 0; }
+  .past b { display: block; font-size: 14px; font-weight: 600; }
+  .past-btns { display: flex; flex-direction: column; gap: 6px; flex: none; }
+  .past-btns .btn { padding: 6px 10px; font-size: 13px; }
   .favs { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
   .fav { background: var(--card2); border: 0; border-radius: 12px; padding: 12px; text-align: left; min-height: 64px; }
   .fav b { display: block; font-size: 14px; font-weight: 600; }
@@ -367,7 +373,7 @@ Work carefully, like a dietitian weighing the plate in their head:
 4. Count cooking oil, butter, sauces, dressings, cheese and drinks that are visible, mentioned, or almost certainly used (restaurant meat and fried rice carry oil). Food logs usually undercount these.
 5. Check yourself: each item's calories should be close to 4 x protein + 4 x carbs + 9 x fat, and the meal total should be believable for what is in the picture. Fix anything that is off before answering.
 
-Saved meals the person logs often, and what he has logged before, may be listed below; when this meal matches one (the same restaurant order, the same bowl he makes at home), keep the estimate consistent with it, adjusted only for what is visibly or stated differently this time. A past entry's own words (in quotes) are his corrections and details, so they are more reliable than a photo guess.
+Saved meals the person logs often, and what he has logged before, may be listed below; when this meal matches one (the same restaurant order, the same bowl he makes at home), keep the estimate consistent with it, adjusted only for what is visibly or stated differently this time. A past entry's own words (in quotes) are his corrections and details, so they are more reliable than a photo guess. When he only names or describes a meal from that list (for example "protein pudding", "the same bowl as Tuesday") and gives no photo and no differences, he is logging it again: use its title and return items that add up exactly to that entry's calories, protein, carbs and fat, with confidence "high".
 
 Split the meal into its main components, one item per distinct food. For each item give a short name, the portion you assumed in plain words with grams ("8 oz cooked (225 g)", "1 cup (160 g)", "3 corn tortillas (75 g)"), and calories plus protein, carbs, fat and fiber in grams for that portion.
 
@@ -752,9 +758,10 @@ function savedMealsNote() {
 }
 // what he has actually logged lately, one line per distinct meal, so a repeat (same order, same bowl) gets the same numbers
 const PAST_DAYS = 90, MAX_PAST = 60;
-function pastMealsNote() {
-  const from = shiftDay(today(), -PAST_DAYS), byTitle = new Map();
-  for (const date of Object.keys(S.days).filter((d) => d >= from).sort()) {
+// one group per distinct meal title (since `from`, or ever): how many times, and the latest entry with its date
+function pastMeals(from) {
+  const byTitle = new Map();
+  for (const date of Object.keys(S.days).filter((d) => !from || d >= from).sort()) {
     for (const e of liveEntries(date)) {
       const k = (e.title || "").trim().toLowerCase();
       if (!k) continue;
@@ -762,7 +769,10 @@ function pastMealsNote() {
       byTitle.set(k, { n: g.n + 1, e, date });   // dates run oldest to newest, so the last one kept is the latest
     }
   }
-  const groups = [...byTitle.values()].sort((a, b) => b.n - a.n || (a.date < b.date ? 1 : -1)).slice(0, MAX_PAST);
+  return [...byTitle.values()];
+}
+function pastMealsNote() {
+  const groups = pastMeals(shiftDay(today(), -PAST_DAYS)).sort((a, b) => b.n - a.n || (a.date < b.date ? 1 : -1)).slice(0, MAX_PAST);
   if (!groups.length) return "";
   return "\n\nWhat he has logged in the last " + PAST_DAYS + " days (latest time for each, as he logged it):\n" + groups.map(({ n, e, date }) => {
     const items = (e.items || []).map((i) => i.name + (i.portion ? " " + i.portion : "")).concat((e.adds || []).map((a) => (a.name || "extra") + " " + r0(a.cal) + " cal")).join("; ");
@@ -770,6 +780,42 @@ function pastMealsNote() {
     return "- " + e.title + " (" + (n > 1 ? n + " times, last " : "") + date + ")" + (items ? ": " + items : "") + (+e.servings && e.servings !== 1 ? " x" + e.servings : "")
       + (words ? ' "' + words + '"' : "") + " = " + r0(e.cal) + " cal, " + r0(e.p) + " g protein, " + r0(e.c) + " g carbs, " + r0(e.f) + " g fat";
   }).join("\n");
+}
+// past meals matching what he's typing ("pudding" finds "Protein pudding"): every word he typed starts a word in the
+// meal's title, items or his own description (one miss allowed in a long description); best match first, then the latest
+const words = (s) => (s || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").split(/[^a-z0-9]+/).filter(Boolean);
+const PAST_STOP = new Set(["a", "an", "the", "of", "and", "with", "i", "had", "my", "some", "same", "as", "again", "like", "from", "for", "to", "it", "oz", "g"]);
+function searchPast(q, max = 5) {
+  const want = words(q).filter((w) => w.length > 1 && !PAST_STOP.has(w) && !/^\d+$/.test(w));
+  if (!want.length) return [];
+  const out = [];
+  for (const g of pastMeals()) {
+    const e = g.e, title = words(e.title), all = title.concat(...(e.items || []).map((i) => words(i.name)), words(e.text));
+    const hit = want.filter((w) => all.some((x) => x.startsWith(w))).length;
+    if (hit < want.length && !(want.length > 2 && hit >= want.length - 1)) continue;
+    const inTitle = want.filter((w) => title.some((x) => x.startsWith(w))).length;
+    out.push({ ...g, score: hit * 2 + inTitle });
+  }
+  return out.sort((a, b) => b.score - a.score || (a.date < b.date ? 1 : -1)).slice(0, max);
+}
+const isFav = (title) => S.favs.some((f) => !f.del && f.title.trim().toLowerCase() === (title || "").trim().toLowerCase());
+function pastMatches(q, date) {
+  const found = searchPast(q);
+  if (!found.length) return "";
+  return `<h2 style="margin-top:14px">You've had this before</h2>` + found.map(({ e, n, date: was }) => `
+    <div class="past">
+      ${e.photo ? `<div class="thumb" data-photo="${e.photo}"></div>` : ""}
+      <div class="grow"><b>${h(e.title)}</b><span class="small dim">${fmt(e.cal)} cal · ${fmt(e.p)}g protein · ${n > 1 ? n + "× · last " : ""}${h(niceDate(was))}</span></div>
+      <div class="past-btns"><button class="btn primary" data-act="logPast" data-d="${date}" data-from="${was}" data-id="${e.id}">Log again</button>
+      ${isFav(e.title) ? "" : `<button class="btn ghost" data-act="favPast" data-from="${was}" data-id="${e.id}">☆ Save as usual</button>`}</div>
+    </div>`).join("");
+}
+function refreshPast() {
+  const el = $("pastList");
+  if (!el) return;
+  const a = route().args[0];
+  el.innerHTML = pastMatches($("foodText")?.value || "", /^\d{4}-\d{2}-\d{2}$/.test(a || "") ? a : today());
+  hydratePhotos();
 }
 async function estimate({ photos, text, previous, correction }) {
   const client = await claude();
@@ -1321,6 +1367,7 @@ function viewAdd(r) {
     : `<button class="photo-pick" data-act="pick"><span class="big">📷</span>Take or choose photos</button>`}
   <label class="field" style="margin-top:12px"><span>What did you eat? Add amounts if you know them</span>
     <textarea id="foodText" data-bind="text" placeholder="e.g. 8 oz carne asada, cup of rice, pico">${h(d ? d.text : "")}</textarea></label>
+  <div id="pastList">${pastMatches(d ? d.text : "", date)}</div>
   <button class="btn primary block" data-act="estimate" data-d="${date}" ${noKey ? "disabled" : ""}>Estimate calories</button>
   <div id="estStatus" style="margin-top:12px"></div>
   <button class="btn ghost block" data-act="manual" data-d="${date}">Type the numbers myself</button>
@@ -3242,6 +3289,31 @@ const ACT = {
     go(date === today() ? "#/" : "#/day/" + date);
     toast("Logged " + f.title, "Undo", async () => { await putEntry(date, Object.assign({}, entry, { del: true })); render(); });
   },
+  // a meal from his history logged again as it was (numbers, items, amounts, his words); its photo stays with the first time
+  async logPast(b) {
+    const old = dayDoc(b.dataset.from).entries.find((e) => e.id === b.dataset.id);
+    if (!old) return;
+    const date = b.dataset.d;
+    const entry = { id: uid(), time: date === today() ? nowHM() : "12:00", title: old.title, items: structuredClone(old.items || []), ...(old.adds ? { adds: structuredClone(old.adds) } : {}),
+      servings: +old.servings || 1, cal: r0(old.cal), p: r0(old.p), c: r0(old.c), f: r0(old.f), fiber: r0(old.fiber), photo: null, text: old.text || "",
+      note: "", confidence: old.confidence || "", src: "again", again: old.id };
+    await putEntry(date, entry);
+    if (S.draft && S.draft.stage === "input" && S.draft.date === date && !S.draft.photo) { S.draft = null; await put("draft", null); }
+    go(date === today() ? "#/" : "#/day/" + date);
+    toast("Logged " + entry.title + " · " + fmt(entry.cal) + " cal", "Undo", async () => { await putEntry(date, Object.assign({}, entry, { del: true })); render(); });
+  },
+  async favPast(b) {
+    const e = dayDoc(b.dataset.from).entries.find((x) => x.id === b.dataset.id);
+    if (!e || isFav(e.title)) return;
+    // a saved meal logs its totals as one serving; items only come along when they already add up to those totals
+    const plain = (+e.servings || 1) === 1 && !(e.items || []).some((i) => itemAmt(i) !== 1);
+    S.favs.push({ id: uid(), title: e.title, sub: (e.items || []).map((i) => i.name).slice(0, 4).join(", "), items: plain ? structuredClone(e.items || []) : [],
+      ...(plain && e.adds ? { adds: structuredClone(e.adds) } : {}), cal: r0(e.cal), p: r0(e.p), c: r0(e.c), f: r0(e.f), fiber: r0(e.fiber), u: Date.now() });
+    await put("favs", S.favs);
+    scheduleSync(2000);
+    refreshPast();
+    toast("Saved " + e.title + " to your meals");
+  },
   dropItem(b) { S.draft.items.splice(+b.dataset.i, 1); S.draft.override = {}; saveDraft(); render(); },
   servings(b) { S.draft.servings = +b.dataset.v; S.draft.override = {}; saveDraft(); render(); },
   quickCal(b) {
@@ -3515,6 +3587,7 @@ const ACT = {
   },
 };
 
+let pastTimer = 0;
 function ensureInputDraft(date) {
   if (!S.draft || S.draft.stage !== "input" || S.draft.date !== date) S.draft = { stage: "input", date, photo: null, big: null, text: "" };
   return S.draft;
@@ -3574,6 +3647,8 @@ view.addEventListener("input", (e) => {
   if (t.dataset.bind === "text") {
     const a = route().args[0];
     ensureInputDraft(/^\d{4}-\d{2}-\d{2}$/.test(a || "") ? a : today()).text = t.value;
+    clearTimeout(pastTimer);
+    pastTimer = setTimeout(refreshPast, 150);
     return saveDraft();
   }
   const d = S.draft;
