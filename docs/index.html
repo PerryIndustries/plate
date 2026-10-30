@@ -110,6 +110,7 @@
   .seg { display: flex; gap: 6px; flex-wrap: wrap; }
   .seg button { border: 1px solid var(--line); background: var(--card2); border-radius: 10px; padding: 8px 12px; min-width: 48px; }
   .seg.mini { margin-top: 6px; gap: 4px; flex-wrap: nowrap; }
+  .item .from { color: var(--accent); margin-top: 2px; }
   .itemnums { display: flex; gap: 8px; margin-top: 6px; }
   .itemnums label { display: flex; align-items: center; gap: 4px; flex: 1; }
   .itemnums input { min-width: 0; width: 100%; padding: 6px 8px; }
@@ -378,7 +379,9 @@ Work carefully, like a dietitian weighing the plate in their head:
 
 Saved meals the person logs often, and what he has logged before, may be listed below; when this meal matches one (the same restaurant order, the same bowl he makes at home), keep the estimate consistent with it, adjusted only for what is visibly or stated differently this time. A past entry's own words (in quotes) are his corrections and details, so they are more reliable than a photo guess. When he only names or describes a meal from that list (for example "protein pudding", "the same bowl as Tuesday") and gives no photo and no differences, he is logging it again: use its title and return items that add up exactly to that entry's calories, protein, carbs and fat, with confidence "high".
 
-Split the meal into its main components, one item per distinct food. For each item give a short name, the portion you assumed in plain words with grams ("8 oz cooked (225 g)", "1 cup (160 g)", "3 corn tortillas (75 g)"), and calories plus protein, carbs, fat and fiber in grams for that portion.
+Foods he has logged before are also listed one by one, each with the portion and the numbers he kept for it. He fixes numbers by hand, so these beat a fresh guess. When a food in this meal is one of them (the same product or brand, the same fruit, the same homemade dish such as his carne asada or his yogurt bowl), base that item on the listed one: multiply its calories, protein, carbs, fat and fiber all by the same factor (this portion divided by the listed portion), and say the scaling in the portion ("about half the usual bowl (150 g)"). Keep those scaled numbers as they are; step 5 does not apply to them. Use the photo or his words only to judge how much; do not re-guess what the food is made of. A food that is only similar (a different restaurant's tacos, a different brand) is not a match.
+
+Split the meal into its main components, one item per distinct food. For each item give a short name, the portion you assumed in plain words with grams ("8 oz cooked (225 g)", "1 cup (160 g)", "3 corn tortillas (75 g)"), and calories plus protein, carbs, fat and fiber in grams for that portion. from: when the item is based on a saved meal or a food he logged before, that saved meal's or food's name exactly as listed; otherwise an empty string.
 
 title: a short name for the meal, under 40 characters.
 confidence: "high" when amounts are known (label, weighed, stated), "medium" when portions are judged from a clear photo, "low" when guessing.
@@ -391,8 +394,8 @@ const SCHEMA = {
   properties: {
     title: { type: "string" },
     items: { type: "array", items: { type: "object", additionalProperties: false,
-      required: ["name", "portion", "calories", "protein", "carbs", "fat", "fiber"],
-      properties: { name: { type: "string" }, portion: { type: "string" }, calories: NUM, protein: NUM, carbs: NUM, fat: NUM, fiber: NUM } } },
+      required: ["name", "portion", "calories", "protein", "carbs", "fat", "fiber", "from"],
+      properties: { name: { type: "string" }, portion: { type: "string" }, calories: NUM, protein: NUM, carbs: NUM, fat: NUM, fiber: NUM, from: { type: "string" } } } },
     confidence: { type: "string", enum: ["high", "medium", "low"] },
     note: { type: "string" },
     shots: { type: "array", items: { type: "object", additionalProperties: false, required: ["photo", "name", "box"],
@@ -755,9 +758,10 @@ function countUsage(u) {
 const textOf = (msg) => (msg.content || []).filter((b) => b.type === "text").map((b) => b.text).join("");
 // his saved meals, so an estimate of a meal he eats a lot matches what he already logs for it
 function savedMealsNote() {
-  const favs = (S.favs || []).filter((f) => !f.del).slice(0, 20);
+  const favs = (S.favs || []).filter((f) => !f.del).slice(0, 40);
   if (!favs.length) return "";
-  return "\n\nSaved meals:\n" + favs.map((f) => "- " + f.title + (f.sub ? " (" + f.sub + ")" : "") + ": " + r0(f.cal) + " cal, " + r0(f.p) + " g protein, " + r0(f.c) + " g carbs, " + r0(f.f) + " g fat").join("\n");
+  return "\n\nSaved meals:\n" + favs.map((f) => "- " + f.title + (f.sub ? " (" + f.sub + ")" : "") + ": " + r0(f.cal) + " cal, " + r0(f.p) + " g protein, " + r0(f.c) + " g carbs, " + r0(f.f) + " g fat"
+    + ((f.items || []).length > 1 ? " [" + f.items.map((i) => i.name + (i.portion ? " " + i.portion : "") + " " + r0(i.calories) + " cal").join("; ") + "]" : "")).join("\n");
 }
 // what he has actually logged lately, one line per distinct meal, so a repeat (same order, same bowl) gets the same numbers
 const PAST_DAYS = 90, MAX_PAST = 60;
@@ -783,6 +787,25 @@ function pastMealsNote() {
     return "- " + e.title + " (" + (n > 1 ? n + " times, last " : "") + date + ")" + (items ? ": " + items : "") + (+e.servings && e.servings !== 1 ? " x" + e.servings : "")
       + (words ? ' "' + words + '"' : "") + " = " + r0(e.cal) + " cal, " + r0(e.p) + " g protein, " + r0(e.c) + " g carbs, " + r0(e.f) + " g fat";
   }).join("\n");
+}
+// every separate food he has logged (and the foods inside saved meals), the latest numbers for each name, so the same
+// kiwi, chicken or homemade asada gets the same calories per gram inside a new meal
+const MAX_FOODS = 150;
+function foodsNote() {
+  const byName = new Map();
+  const add = (it, n, meal, date) => {
+    const k = (it.name || "").trim().toLowerCase();
+    if (!k || !(+it.calories > 0)) return;
+    const g = byName.get(k);
+    byName.set(k, { it, meal, date, n: (g ? g.n : 0) + n });
+  };
+  for (const f of (S.favs || []).filter((f) => !f.del)) for (const it of f.items || []) add(it, 0, f.title + ", saved meal", "");
+  for (const date of Object.keys(S.days).sort()) for (const e of liveEntries(date)) for (const it of e.items || []) add(it, 1, e.title, date);
+  const foods = [...byName.values()].sort((a, b) => b.n - a.n || (a.date < b.date ? 1 : -1)).slice(0, MAX_FOODS);
+  if (!foods.length) return "";
+  return "\n\nFoods he has logged before (one line per food, the latest numbers he kept for one full portion):\n" + foods.map(({ it, meal, date, n }) =>
+    "- " + it.name + (it.portion ? ": " + it.portion : "") + " = " + r0(it.calories) + " cal, " + r0(it.protein) + " g protein, " + r0(it.carbs) + " g carbs, " + r0(it.fat) + " g fat"
+    + " (in " + meal + (n > 1 ? ", " + n + " times" : "") + (date ? ", last " + date : "") + ")").join("\n");
 }
 // past meals matching what he's typing ("pudding" finds "Protein pudding"): every word he typed starts a word in the
 // meal's title, items or his own description (one miss allowed in a long description); best match first, then the latest
@@ -840,7 +863,8 @@ async function estimate({ photos, text, previous, correction }) {
       betas: ["server-side-fallback-2026-07-01"],
       fallbacks: "default",
       output_config: { effort: "high", format: { type: "json_schema", schema: SCHEMA } },
-      system: SYSTEM + savedMealsNote() + pastMealsNote(),
+      cache_control: { type: "ephemeral" },   // a fix right after an estimate reuses the same long history
+      system: SYSTEM + savedMealsNote() + pastMealsNote() + foodsNote(),
       messages: [{ role: "user", content }],
     });
   } catch (e) { throw claudeError(e); }
@@ -1430,6 +1454,7 @@ function viewReview() {
     ${d.note ? `<p class="small dim" style="margin:0 0 8px">${h(d.note)}</p>` : ""}
     ${d.items.length ? d.items.map((it, i) => `
       <div class="item"><div class="info"><b>${h(it.name)}</b><div class="small dim">${itemAmt(it) !== 1 ? (AMT_LBL[itemAmt(it)] || itemAmt(it)) + "× " : ""}${h(it.portion)}</div>
+        ${it.from ? `<div class="small from">↺ like your ${h(it.from)}</div>` : ""}
         <div class="itemnums">
           <label><input type="number" inputmode="decimal" data-bind="itemNum" data-i="${i}" data-k="calories" value="${r0(it.calories * itemAmt(it))}" aria-label="Calories in the ${h(it.name)}"><span>cal</span></label>
           <label><input type="number" inputmode="decimal" data-bind="itemNum" data-i="${i}" data-k="protein" value="${r0(it.protein * itemAmt(it))}" aria-label="Protein in the ${h(it.name)}"><span>g P</span></label>
