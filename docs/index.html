@@ -117,6 +117,9 @@
   .addcal { border-top: 1px solid var(--line); padding-top: 10px; margin-top: 4px; }
   .addcal .row input { min-width: 0; }
   .seg.mini button { padding: 4px 0; min-width: 0; flex: 1; min-height: 34px; font-size: 13px; }
+  .seg .daypick { position: relative; border: 1px solid var(--line); background: var(--card2); border-radius: 10px; padding: 8px 12px; overflow: hidden; }
+  .seg .daypick.on { background: var(--accent); color: #06210F; border-color: var(--accent); font-weight: 700; }
+  .seg .daypick input { position: absolute; inset: 0; opacity: 0; width: 100%; height: 100%; font-size: 16px; }
   .seg button.on { background: var(--accent); color: #06210F; border-color: var(--accent); font-weight: 700; }
   .totals { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
   .totals label span { display: block; font-size: 12px; color: var(--dim); margin-bottom: 4px; }
@@ -1358,6 +1361,7 @@ function viewAdd(r) {
   const noKey = !(S.settings.apiKey || "").trim();
   return `
   <h1>Log food${date !== today() ? ` <span class="dim small">· ${h(niceDate(date))}</span>` : ""}</h1>
+  ${dayPicker(date, "addDay")}
   ${noKey ? `<div class="card small">Photo and text estimates need your Claude API key. <a href="#/settings">Add it in Settings</a>. Saved meals and typing numbers work without it.</div>` : ""}
   ${d && d.photo ? `<div class="picks">${foodPhotos(d).map((ph, i) => `<div style="background-image:url(${ph.photo})"><button class="x" data-act="dropFoodPhoto" data-i="${i}" aria-label="Remove photo">×</button></div>`).join("")}
       ${foodPhotos(d).length < MAX_FOOD_PHOTOS ? `<button class="add" data-act="pick" aria-label="Add another photo">+</button>` : ""}</div>
@@ -1399,6 +1403,15 @@ function shiftOverride(d, cal, p) {
   const o = d.override || {};
   if (o.cal != null && o.cal !== "") o.cal = +o.cal + cal;
   if (p && o.p != null && o.p !== "") o.p = +o.p + p;
+}
+
+// Today / Yesterday buttons plus any earlier day; act is the action that takes the picked day
+function dayPicker(date, act) {
+  const t = today(), y = shiftDay(t, -1), other = date !== t && date !== y;
+  return `<div class="seg" role="group" aria-label="Which day">
+    <button class="${date === t ? "on" : ""}" data-act="${act}" data-v="${t}">Today</button>
+    <button class="${date === y ? "on" : ""}" data-act="${act}" data-v="${y}">Yesterday</button>
+    <label class="daypick ${other ? "on" : ""}">${other ? h(niceDate(date)) : "Other day"}<input type="date" data-pickday="${act}" max="${t}" value="${date}"></label></div>`;
 }
 
 function viewReview() {
@@ -1447,7 +1460,9 @@ function viewReview() {
       ${[["cal", "Calories"], ["p", "Protein"], ["c", "Carbs"], ["f", "Fat"]].map(([k, l]) => `
         <label><span>${l}</span><input type="number" inputmode="decimal" data-bind="tot" data-k="${k}" value="${r0(t[k])}"></label>`).join("")}
     </div>
-    <label class="field" style="margin-top:14px"><span>Time</span><input type="time" data-bind="time" value="${h(d.time)}"></label>
+    <div class="field" style="margin-top:14px"><span>Day</span>${dayPicker(d.date, "draftDay")}</div>
+    ${d.movedNote ? `<p class="small dim" style="margin:6px 0 0">${h(d.movedNote)}</p>` : ""}
+    <label class="field" style="margin-top:10px"><span>Time</span><input type="time" data-bind="time" value="${h(d.time)}"></label>
     ${d.src !== "fav" ? `<label class="check"><input type="checkbox" data-bind="saveFav" ${d.saveFav ? "checked" : ""}> Save to my meals for one-tap logging</label>` : ""}
   </div>
   ${canRedo ? `<div class="card">
@@ -3290,6 +3305,8 @@ const ACT = {
     toast("Logged " + f.title, "Undo", async () => { await putEntry(date, Object.assign({}, entry, { del: true })); render(); });
   },
   // a meal from his history logged again as it was (numbers, items, amounts, his words); its photo stays with the first time
+  addDay(b) { pickAddDay(b.dataset.v); },
+  draftDay(b) { setDraftDay(b.dataset.v); },
   async logPast(b) {
     const old = dayDoc(b.dataset.from).entries.find((e) => e.id === b.dataset.id);
     if (!old) return;
@@ -3386,6 +3403,11 @@ const ACT = {
       note: d.note || "", confidence: d.confidence || "", src: d.src || "manual", ...(d.adds && d.adds.length ? { adds: d.adds } : {}),
       ...(shots.length ? { shots } : {}) };
     await putEntry(d.date, entry);
+    // moved to another day: the old day keeps a tombstone so the backup drops it there too
+    if (d.from && d.from !== d.date) {
+      const old = dayDoc(d.from).entries.find((e) => e.id === entry.id);
+      if (old && !old.del) await putEntry(d.from, Object.assign({}, old, { del: true }));
+    }
     if (d.saveFav) {
       S.favs.push({ id: uid(), title: entry.title, sub: d.items.map((i) => i.name).slice(0, 4).join(", "), items: d.items, ...(entry.adds ? { adds: entry.adds } : {}),
         cal: entry.cal, p: entry.p, c: entry.c, f: entry.f, fiber: entry.fiber, u: Date.now() });
@@ -3395,13 +3417,12 @@ const ACT = {
     S.draft = null;
     await put("draft", null);
     go(date === today() ? "#/" : "#/day/" + date);
-    toast("Saved " + entry.title + " · " + fmt(entry.cal) + " cal");
+    toast("Saved " + entry.title + " · " + fmt(entry.cal) + " cal" + (date !== today() ? " to " + niceDate(date) : ""));
   },
   async deleteEntry() {
-    const d = S.draft, old = dayDoc(d.date).entries.find((e) => e.id === d.id);
+    const d = S.draft, date = d.from || d.date, old = dayDoc(date).entries.find((e) => e.id === d.id);
     if (!old) return;
-    await putEntry(d.date, Object.assign({}, old, { del: true }));
-    const date = d.date;
+    await putEntry(date, Object.assign({}, old, { del: true }));
     S.draft = null;
     await put("draft", null);
     go(date === today() ? "#/" : "#/day/" + date);
@@ -3420,7 +3441,7 @@ const ACT = {
     const photo = await photoData(e.photo);
     const more = [];
     for (const id of e.more || []) { const ph = await photoData(id); if (ph) more.push({ id, photo: ph, big: null }); }
-    S.draft = { more, stage: "review", editing: true, id: e.id, date: b.dataset.d, time: e.time, title: e.title, items: structuredClone(e.items || []),
+    S.draft = { more, stage: "review", editing: true, id: e.id, date: b.dataset.d, from: b.dataset.d, time: e.time, title: e.title, items: structuredClone(e.items || []),
       servings: e.servings || 1, photo, photoId: e.photo, big: null, text: e.text || "", note: e.note, confidence: e.confidence, src: e.src,
       adds: structuredClone(e.adds || []),
       ...(e.shots ? { shots: e.shots.map((s) => ({ i: [e.photo, ...(e.more || [])].indexOf(s.photo), name: s.name, box: s.box || null })).filter((s) => s.i >= 0) } : {}),
@@ -3587,6 +3608,19 @@ const ACT = {
   },
 };
 
+// Log food for another day: what he already typed or photographed comes along
+function pickAddDay(date) {
+  if (S.draft && S.draft.stage === "input") { S.draft.date = date; saveDraft(); }
+  go(date === today() ? "#/add" : "#/add/" + date);
+}
+function setDraftDay(date, note) {
+  const d = S.draft;
+  if (!d || !/^\d{4}-\d{2}-\d{2}$/.test(date) || date > today()) return;
+  d.date = date;
+  d.movedNote = note || "";
+  saveDraft();
+  render();
+}
 let pastTimer = 0;
 function ensureInputDraft(date) {
   if (!S.draft || S.draft.stage !== "input" || S.draft.date !== date) S.draft = { stage: "input", date, photo: null, big: null, text: "" };
@@ -3677,6 +3711,14 @@ view.addEventListener("input", (e) => {
 view.addEventListener("change", async (e) => {
   const t = e.target;
   if (t.dataset.bind === "saveFav" && S.draft) { S.draft.saveFav = t.checked; saveDraft(); return; }
+  if (t.dataset.pickday && t.value) return t.dataset.pickday === "addDay" ? pickAddDay(t.value > today() ? today() : t.value) : setDraftDay(t.value);
+  if (t.dataset.bind === "time" && S.draft && S.draft.stage === "review" && t.value) {
+    const d = S.draft;
+    d.time = t.value;
+    if (d.date === today() && dayMinutes(t.value) > dayMinutes(nowHM()) + 15) return setDraftDay(shiftDay(today(), -1), niceTime(t.value) + " hasn't happened yet today, so this went to yesterday. Tap Today to keep it here.");
+    if (d.movedNote) { d.movedNote = ""; saveDraft(); render(); }
+    return;
+  }
   if (t.id === "talkAbout") { clearTimeout(aboutTimer); aboutTimer = 0; S.talkAbout = t.value; return put("talkAbout", S.talkAbout); }   // blur: write it now
   if (t.dataset.cmp) return go("#/compare/" + t.dataset.cmp + "/" + t.value);
   if (t.dataset.gbind === "date") return render();   // the "goes with Upper A" line follows the new day
